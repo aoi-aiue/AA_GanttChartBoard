@@ -1,0 +1,3944 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AA_GanttChartBoard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='6' width='17' height='5.5' rx='2.75' fill='%232F6FBF'/%3E%3Crect x='4' y='13.25' width='24' height='5.5' rx='2.75' fill='%2355939F'/%3E%3Crect x='4' y='20.5' width='13' height='5.5' rx='2.75' fill='%23D23B30'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;
+  --panel:#FFFFFF;
+  --text:#1A1D21;
+  --muted:#878E98;
+  --faint:#B4BAC2;
+  --line:#E8EAED;
+  --line2:#F3F4F6;
+  --accent:#2F6FBF;
+  --hover:#F7F8F9;
+  --rowHov:rgba(20,29,40,.03);
+  --dayNum:#6B7280;
+  --satTxt:#5B8BC9;
+  --sunTxt:#C9736A;
+  --wkSat:rgba(47,111,191,.055);
+  --wkSun:rgba(196,90,74,.055);
+  --hovCol:rgba(47,111,191,.08);
+  --mline:#C7CDD5;
+  --phaseHov:#4B5157;
+  --mband:rgba(20,29,40,.024);
+  --todayCol:rgba(47,111,191,.065);
+  --veil:rgba(255,255,255,.5);
+  --imp:#D23B30;
+  --impRgb:210,59,48;
+  --imp2:#E9AF12;
+  --imp2d:#A87B00;
+  --stem:#C9CDD3;
+  --lblBg:rgba(255,255,255,.92);
+  --leftW:272px;
+  --asgW:86px;
+  --rowH:44px;
+  --barH:26px;
+  --avL:20px;
+  --headH:58px;
+}
+body.dark{
+  --bg:#0F1216;
+  --panel:#14181E;
+  --text:#E6EAEF;
+  --muted:#8B93A0;
+  --faint:#5A626E;
+  --line:#272E38;
+  --line2:#1E242C;
+  --accent:#5B9BE6;
+  --hover:#1B212A;
+  --rowHov:rgba(255,255,255,.045);
+  --dayNum:#98A2B0;
+  --satTxt:#6FA3E0;
+  --sunTxt:#D68A80;
+  --wkSat:rgba(91,155,230,.09);
+  --wkSun:rgba(214,106,94,.09);
+  --hovCol:rgba(91,155,230,.12);
+  --mline:#3B434F;
+  --phaseHov:#9AA2AC;
+  --mband:rgba(255,255,255,.035);
+  --todayCol:rgba(91,155,230,.1);
+  --veil:rgba(15,18,22,.5);
+  --imp:#E2685E;
+  --impRgb:226,104,94;
+  --imp2:#D9A514;
+  --imp2d:#E5C155;
+  --stem:#454D58;
+  --lblBg:rgba(20,24,30,.92);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:Inter,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic Medium","Yu Gothic",Meiryo,sans-serif;
+  font-size:13px;display:flex;flex-direction:column;overflow:hidden;
+  font-feature-settings:"tnum";
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:12px}
+input,select{font-family:inherit;font-size:13px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 9px;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* テーマ切替: 月/太陽アイコン入りのトグルスイッチ(つまみを細長いカプセル型に) */
+.themeToggle{
+  position:relative;flex:none;width:56px;height:22px;border-radius:99px;
+  background:var(--line2);border:1px solid var(--line);
+  padding:0;margin:0;box-sizing:border-box;display:inline-block;vertical-align:middle;
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  line-height:normal;font:inherit;
+}
+.themeToggle:hover{border-color:#C9CDD3}
+.themeToggle .ttIcon{
+  position:absolute;top:50%;transform:translateY(-50%);font-size:11px;line-height:1;
+  color:var(--text);transition:opacity .15s;z-index:1;
+}
+.themeToggle .ttIcon.sun{left:6px}
+.themeToggle .ttIcon.moon{right:6px}
+.themeToggle .ttKnob{
+  position:absolute;top:50%;left:3px;width:24px;height:16px;border-radius:99px;
+  background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.3);
+  transform:translateY(-50%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:2;
+}
+body.dark .themeToggle{background:var(--hover)}
+body.dark .themeToggle .ttKnob{transform:translateY(-50%) translateX(26px)}
+body.dark .themeToggle .ttIcon.sun{opacity:.45}
+.themeToggle .ttIcon.moon{opacity:.45}
+body.dark .themeToggle .ttIcon.moon{opacity:1}
+/* ダーク/ライト切替の瞬間だけ、色に関わるプロパティをまとめて滑らかにクロスフェード(transformは対象外にして、トグルのつまみ等のアニメーションを潰さない) */
+body.themeSwitching,body.themeSwitching *{
+  transition:background-color .4s cubic-bezier(.4,0,.2,1),color .4s cubic-bezier(.4,0,.2,1),
+    border-color .4s cubic-bezier(.4,0,.2,1),box-shadow .4s cubic-bezier(.4,0,.2,1),fill .4s ease,
+    transform .25s cubic-bezier(.4,0,.2,1) !important;
+}
+#btnTheme{position:relative;overflow:hidden}
+body.themeSwitching #btnTheme::after{
+  content:"";position:absolute;inset:0;border-radius:4px;
+  background:radial-gradient(circle,rgba(255,255,255,.5) 0%,rgba(255,255,255,0) 70%);
+  animation:themeFlash .45s ease-out;pointer-events:none;
+}
+@keyframes themeFlash{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(2.2)}}
+
+/* ---------- title bar (header image + large overlaid title, click to edit) ---------- */
+#titleBar{
+  position:relative;width:100%;min-height:64px;overflow:hidden;
+  background:var(--panel);border-bottom:1px solid var(--line);
+}
+#titleBar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#titleBar.hasImg{min-height:176px}
+#titleBar.hasImg img{display:block}
+#titleOverlay{
+  position:absolute;inset:0;display:none;
+  background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.15) 55%,rgba(0,0,0,0) 100%);
+}
+#titleBar.hasImg #titleOverlay{display:block}
+#titleBtn{
+  position:relative;z-index:1;display:block;width:100%;text-align:left;
+  padding:14px 22px;cursor:pointer;
+}
+#titleBar.hasImg #titleBtn{position:absolute;left:0;bottom:0;padding:18px 22px 16px}
+#titleText{
+  font-size:26px;font-weight:700;letter-spacing:.01em;color:var(--text);
+  line-height:1.25;max-width:80vw;
+}
+#titleBar.hasImg #titleText{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+#titleBtn:hover #titleText{opacity:.82}
+#titleBar.hasImg #titleBtn:hover #titleOverlay{background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,0) 100%)}
+#titleCountdown{
+  position:absolute;top:14px;right:18px;z-index:2;
+  padding:5px 13px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.02em;
+  background:var(--hover);color:var(--text);border:1px solid var(--line);cursor:pointer;
+}
+#titleCountdown:hover{background:var(--line2)}
+#titleBar.hasImg #titleCountdown{
+  background:rgba(0,0,0,.45);color:#fff;border:none;backdrop-filter:blur(2px);
+  text-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+#titleBar.hasImg #titleCountdown:hover{background:rgba(0,0,0,.6)}
+
+/* ---------- toolbar ---------- */
+header{
+  display:flex;align-items:center;gap:14px;padding:9px 16px;
+  border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--panel);
+}
+.tgroup{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:8px;background:var(--hover)}
+.segLabel{font-size:10.5px;color:var(--faint);white-space:nowrap;margin-right:-2px}
+.scaleStepper{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--panel);transition:opacity .15s}
+.scaleStepper.disabled{opacity:.4;pointer-events:none}
+.scaleStepper button{padding:5px 8px;color:#4B5157;font-weight:700;line-height:1}
+.scaleStepper button:hover{background:var(--hover)}
+.scaleStepper button:disabled{color:var(--faint);cursor:default;background:none}
+#scaleReset{border-left:1px solid var(--line);font-weight:400;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1}
+#scaleLabel{font-size:11px;color:var(--muted);min-width:34px;text-align:center;font-feature-settings:"tnum"}
+.spacer{flex:1}
+.btn{padding:6px 11px;border-radius:4px;color:#4B5157}
+.btn:hover{background:var(--line2);color:var(--text)}
+.tgroup .btn:hover{background:#fff}
+body.dark .tgroup .btn:hover{background:rgba(255,255,255,.06)}
+.btn.solid{border:1px solid var(--line)}
+.btn.solid:hover{border-color:#C9CDD3}
+.btn.accent{background:var(--accent);color:#fff;font-weight:600;padding:6px 14px}
+.btn.accent:hover{background:var(--accent);color:#fff;filter:brightness(1.12)}
+#saveState{font-size:11px;color:var(--faint)}
+#appNameSep{height:11px;margin:0}
+#appName{font-size:11px;color:var(--faint);font-weight:700}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--panel)}
+.seg button{padding:6px 10px;color:#4B5157}
+.seg button:hover{background:var(--hover)}
+.seg button.on{background:var(--text);color:var(--bg)}
+/* 重要度2/3は選択時、実際のバーと同じ色(黄色/赤)にして見た目を一致させる。未選択時も薄く色をのぞかせる */
+.seg button.impBtn2{color:#B8860B}
+.seg button.impBtn2.on{background:var(--imp2);color:#332800}
+.seg button.impBtn3{color:var(--imp)}
+.seg button.impBtn3.on{background:var(--imp);color:#fff}
+.seg button.fitBtn{border-left:1px solid var(--line);color:#B4574A}
+.seg button.fitBtn:hover{background:rgba(180,87,74,.08)}
+.seg button.fitBtn.on{background:#B4574A;color:#fff}
+.sep{width:1px;height:18px;background:var(--line);margin:0 4px}
+
+/* ---------- layout: fixed left pane + scrolling right pane ---------- */
+#gantt{flex:1;display:flex;overflow:hidden;position:relative}
+.todayJump{
+  position:absolute;top:var(--headH);margin-top:6px;z-index:25;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--imp);color:#fff;font-size:13px;font-weight:700;line-height:1;
+  padding:4px 8px;border-radius:5px 5px 5px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+  opacity:0;pointer-events:none;transition:opacity .35s ease;
+}
+.todayJump.show{opacity:1;pointer-events:auto}
+.todayJump:hover{filter:brightness(1.1)}
+.todayJump.l{left:calc(var(--leftW) + 6px)}
+.todayJump.r{right:6px;border-radius:5px 5px 0 5px}
+.todayJump.l.show{animation:todayNudgeL 1.4s ease-in-out infinite}
+.todayJump.r.show{animation:todayNudgeR 1.4s ease-in-out infinite}
+@keyframes todayNudgeL{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
+@keyframes todayNudgeR{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+
+/* ---------- FAB(右下の＋ボタンから タスク/マイルストーン/フェイズ追加を出す) ---------- */
+#fab{position:absolute;right:20px;bottom:20px;z-index:28;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+/* ツールバーの「出力」ドロップダウン(ボタン数を減らしてツールバーを圧縮するため) */
+#exportGroup{position:relative}
+#exportMenuPanel{
+  position:absolute;top:100%;left:0;margin-top:4px;
+  display:flex;flex-direction:column;gap:2px;padding:6px;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 6px 16px rgba(20,29,40,.18);
+  opacity:0;pointer-events:none;transform:translateY(-4px);
+  transition:opacity .12s,transform .12s;z-index:50;min-width:130px;
+}
+#exportGroup.open #exportMenuPanel{
+  opacity:1;pointer-events:auto;transform:translateY(0);
+}
+#exportMenuPanel .btn{justify-content:flex-start;text-align:left;width:100%;padding:6px 8px}
+#fabMain{
+  width:48px;height:48px;border-radius:99px;background:var(--text);color:var(--bg);
+  font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);transition:transform .18s ease;flex:none;
+}
+#fabMain:hover{filter:brightness(1.15)}
+#fab.open #fabMain{transform:rotate(45deg)}
+#fabMenu{
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  transition:opacity .16s ease,transform .16s ease;
+}
+#fab.open #fabMenu{opacity:1;pointer-events:auto;transform:translateY(0)}
+.fabItem{
+  background:var(--panel);color:var(--text);border:1px solid var(--line);
+  padding:8px 14px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+.fabItem:hover{background:var(--hover)}
+body.fit #fab{display:none}
+#lpane{
+  width:var(--leftW);min-width:var(--leftW);position:relative;
+  background:var(--panel);border-right:1px solid var(--line);z-index:10;
+  zoom:var(--uiZoom,1);
+}
+#gantt.hscrolled #lpane{box-shadow:8px 0 10px -8px rgba(20,29,40,.15)}
+#lhead{
+  height:var(--headH);border-bottom:1px solid var(--line);
+  display:flex;align-items:flex-end;padding:0 16px 8px;gap:10px;
+  color:var(--faint);font-size:10px;letter-spacing:.1em;background:var(--panel);
+  position:relative;z-index:2;
+}
+#lhead .hl1{flex:1}
+#lhead .hl2{width:var(--asgW);flex:none}
+#gantt.vscrolled #lhead,#gantt.vscrolled .rhead{box-shadow:0 8px 10px -8px rgba(20,29,40,.10)}
+#lclip{position:absolute;top:var(--headH);bottom:0;left:0;right:0;overflow:hidden}
+#lbody{will-change:transform;position:relative}
+
+.colRes{position:absolute;width:9px;cursor:col-resize;z-index:20}
+.colRes:hover{background:linear-gradient(to right,transparent 3px,var(--accent) 3px,var(--accent) 5px,transparent 5px);opacity:.5}
+#resMain{top:0;bottom:0;right:-5px}
+#resAsg{top:0;height:var(--headH);right:calc(11px + var(--asgW))}
+
+#rpane{flex:1;overflow:auto;position:relative;zoom:var(--uiZoom,1)}
+body.fit #rpane{overflow-x:hidden}
+#rinner{position:relative;user-select:none}
+
+/* ---------- right header (dates) ---------- */
+.rhead{
+  position:sticky;top:0;z-index:30;height:var(--headH);
+  background:var(--panel);border-bottom:1px solid var(--line);
+}
+.hFill{position:absolute;top:0;height:100%;pointer-events:none}
+.monthLbl{
+  position:absolute;top:6px;font-size:11px;font-weight:600;color:var(--text);
+  white-space:nowrap;height:16px;line-height:16px;padding-left:7px;
+}
+.mTick{position:absolute;top:0;bottom:0;width:1.5px;background:var(--mline)}
+.dayCell{
+  position:absolute;top:25px;height:28px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:10.5px;color:var(--dayNum);line-height:1;
+}
+.dayCell .wd{font-size:9px;color:var(--faint)}
+.dayCell.sat,.dayCell.sat .wd{color:var(--satTxt)}
+.dayCell.sun,.dayCell.sun .wd{color:var(--sunTxt)}
+.dayCell.today,.dayCell.today .wd{color:var(--accent);font-weight:700}
+/* 過去の日付ヘッダーも、バー/マイルストーンの過去フェードと合わせて薄くする */
+.dayCell.pastDate{opacity:.45}
+/* 本番日: 数字を太字にし、期間全体は下のeventDateBoxで1つの枠として囲む */
+.dayCell.eventday div:first-child{font-weight:700;color:var(--imp)}
+.dayCell.eventday .wd{font-weight:700;color:var(--imp)}
+.eventDateBox{
+  position:absolute;top:25px;height:28px;box-sizing:border-box;
+  border:1.5px solid var(--imp);border-radius:4px;pointer-events:none;
+}
+
+/* ---------- rows (paired: .lrow in left pane / .rrow in right pane) ---------- */
+.lrow{
+  height:var(--rowH);display:flex;align-items:center;gap:10px;padding:0 16px;
+  border-bottom:1px solid var(--line2);cursor:pointer;overflow:hidden;background:var(--panel);
+  transition:opacity .5s ease,transform .12s,box-shadow .12s;
+  user-select:none;
+}
+.rrow{position:relative;height:var(--rowH);border-bottom:1px solid var(--line2);transition:opacity .5s ease,transform .12s,box-shadow .12s}
+.lrow.hov{background:var(--hover)}
+.rrow.hov{background:var(--rowHov)}
+.lrow[data-tid]{position:relative;padding-left:45px}
+.lrow.ghost{padding-left:41px}
+/* 階層線: フェイズの縦棒(x=32px)から続く縦のトランク(::before)と、中黒へつながる横の枝15px(::after) */
+.lrow[data-tid]::before{
+  content:"";position:absolute;left:31px;top:0;bottom:0;width:1px;background:var(--line);pointer-events:none;
+}
+.lrow[data-tid].lastInPhase::before{bottom:50%}
+.lrow[data-tid]::after{
+  content:"";position:absolute;left:31.5px;top:50%;
+  width:15px;height:1px;
+  background:var(--line);pointer-events:none;transform:translateY(-.5px);
+}
+/* フェイズに属さない(未分類の)タスクは、繋がる先のフェイズが無いので罫線を出さず中黒だけにする */
+.lrow[data-tid].noPhase::before,.lrow[data-tid].noPhase::after{display:none}
+/* フェイズをマウスオーバーした時、それ以外をゆっくりディゾルブして薄くする */
+#gantt.phaseFocus .lrow,#gantt.phaseFocus .rrow{opacity:.3}
+#gantt.phaseFocus .lrow.inFocus,#gantt.phaseFocus .rrow.inFocus{opacity:1}
+/* フェイズ強調中、配下タスクの最後の行の下線を消して、ブロックとして繋がって見えるようにする */
+.lrow.phaseEnd,.rrow.phaseEnd{border-bottom-color:transparent}
+
+.tnameWrap{display:flex;align-items:center;gap:6px;flex:1;min-width:0;transition:transform .12s}
+.tdot{flex:none;width:3px;height:3px;border-radius:99px;background:var(--faint)}
+
+.taskName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;font-size:12.5px;font-weight:600;transition:color .15s}
+.catTag{
+  flex:none;font-size:9.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;
+  padding:1px 6px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;transition:transform .12s,background .15s,color .15s,border-color .15s;
+}
+.catTag .cdot{width:6px;height:6px;border-radius:99px;flex:none}
+.bcat{
+  flex:none;display:inline-flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.85);color:#2A2E33;font-size:9px;font-weight:600;
+  border-radius:3px;padding:0 5px;height:14px;max-width:90px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.bcat .cdot{width:5px;height:5px;border-radius:99px;flex:none}
+.out .ocat{color:var(--faint);font-size:9.5px;margin-right:5px}
+.mband{position:absolute;top:0;height:100%}
+/* ドラッグ中: アクティブ以外を減光 */
+#gantt.dragBars .bar,#gantt.dragBars .dia,#gantt.dragBars .diaLbl,#gantt.dragBars .diaStem{opacity:.3;transition:opacity .12s}
+#gantt.dragBars .bar.activeDrag,#gantt.dragBars .dia.activeDrag,#gantt.dragBars .diaLbl.activeDrag,#gantt.dragBars .diaStem.activeDrag{opacity:1}
+/* ドラッグ中は文字が選択されて気持ち悪くなるのを防ぐ(念のための一括対策) */
+#gantt.dragBars,#gantt.dragRows,body.marqueeActive{user-select:none}
+#gantt.dragRows .lrow,#gantt.dragRows .rrow{opacity:.4;transition:opacity .12s}
+#gantt.dragRows .lrow.activeDrag,#gantt.dragRows .rrow.activeDrag{opacity:1}
+.asg{width:var(--asgW);flex:none;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);overflow:hidden;transition:transform .12s,color .15s}
+.avs{width:var(--avL);height:var(--avL);flex:none;display:flex;align-items:center;justify-content:center}
+.avs img{width:100%;height:100%;border-radius:99px;object-fit:cover;display:block}
+.asg .dot{width:9px;height:9px;border-radius:99px;flex:none}
+.asg .dot.none{background:none;border:1px dashed var(--faint)}
+/* .avs内の色丸(アイコン未設定時のフォールバック)は、画像アイコンと同じ大きさに揃える */
+.avs .dot{width:100%;height:100%}
+.asg .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.grip{
+  flex:none;width:12px;margin-left:-6px;color:var(--faint);font-size:11px;
+  cursor:grab;opacity:0;text-align:center;user-select:none;line-height:1;
+  transition:transform .12s,color .12s,opacity .12s;
+}
+.lrow:hover .grip{opacity:1}
+.grip:hover{color:var(--text)}
+.grip:active{cursor:grabbing}
+/* 左端(グリップ)ホバー時、タスクの行全体(左右両パネル)を丸ごと浮かせる */
+.lrow[data-tid].blockLift,.rrow[data-tid].blockLift{
+  transform:translateY(-2px);z-index:3;
+}
+body.fit .lrow[data-tid].blockLift,body.fit .rrow[data-tid].blockLift{transform:none}
+/* タスク行の左端(インデント部分)全体を掴めるヒットエリアにし、一番左をホバーしただけでgrabカーソルが出るように */
+.lrow[data-tid] .grip{
+  position:absolute;left:0;top:0;bottom:0;width:38px;margin:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.dropInd{
+  position:absolute;left:0;right:0;height:2px;background:var(--accent);
+  z-index:40;pointer-events:none;display:none;
+}
+
+/* phase rows: 罫線・色ではなく「行の高さ(余白)」だけで区切りを作る。
+   前置アイコン群は絶対配置の固定座標にして、タスク側の階層線と誤差なく揃える */
+.lrow.phase{
+  position:relative;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--text);
+  padding-left:54px;transition:background .15s,color .15s,transform .12s,box-shadow .12s;
+}
+.lrow.phase .phToggle{
+  position:absolute;left:2px;top:0;bottom:0;width:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:var(--muted);transition:transform .15s;line-height:1;
+}
+.lrow.phase .phToggle:hover{color:var(--text)}
+.lrow.phase.collapsed .phToggle{transform:translateY(-50%) rotate(-90deg);top:50%}
+.lrow.phase .grip{
+  position:absolute;left:16px;top:0;bottom:0;width:12px;margin:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.lrow.phase .pbar{
+  position:absolute;left:30px;top:50%;transform:translateY(-50%);
+  width:3px;height:14px;background:var(--text);border-radius:2px;
+  transition:transform .12s,background .15s;
+}
+.rrow.phase{background:var(--panel);transition:background .15s,transform .12s,box-shadow .12s;cursor:grab}
+/* フェイズ集計バー: 配下タスクの最小開始日〜最大終了日を示す細いバー。閉じていても表示される。
+   始点は縦線、終点は矢印のように尖った形。フェイズ名の左右で線を分割し、文字の背後には何も敷かない
+   (背景で隠す方式だと行がフェードする際に不自然になるため)。ドラッグの当たり判定だけは透明な1本の要素で全幅を覆う */
+.phaseSummaryBar{
+  position:absolute;top:50%;transform:translateY(-50%);height:14px;cursor:grab;
+}
+.phaseSummaryBar:active{cursor:grabbing}
+body.fit .phaseSummaryBar{cursor:not-allowed}
+.phaseSummarySeg{
+  position:absolute;top:50%;transform:translateY(-50%);height:5px;
+  background:var(--text);opacity:.4;pointer-events:none;
+}
+.phaseSummarySeg.arrow{
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 50%,calc(100% - 6px) 100%,0 100%);
+}
+.phaseSummaryBar.activeDrag~.phaseSummarySeg,.phaseSummarySeg.activeDrag{opacity:.7}
+.phaseSummaryStart{
+  position:absolute;top:50%;transform:translateY(-50%);width:1px;height:18px;
+  background:var(--text);opacity:.3;pointer-events:none;
+}
+.phaseSummaryLabel{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:1;
+  font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--muted);
+  white-space:nowrap;pointer-events:none;
+}
+.rrow.phase:active{cursor:grabbing}
+/* グリップ/カレンダー部分をホバー・グラブしている間、フェイズ行全体(左右両パネル)を丸ごと浮かせる */
+.lrow.phase.blockLift,.rrow.phase.blockLift{
+  transform:translateY(-2px);z-index:3;
+}
+body.fit .lrow.phase.blockLift,body.fit .rrow.phase.blockLift{transform:none}
+.taskGroupWrap{overflow:hidden;transition:max-height .15s ease}
+/* フェイズブロックのホバー: 行全体を反転させるのではなく、通常のタスク行と同じ控えめな背景ハイライトにしつつ、
+   薄いグレーだった集計バー・ラベルだけをはっきり濃く(黒く)して強調する */
+.lrow.phase.hov{background:var(--hover)}
+.rrow.phase.hov{background:var(--rowHov)}
+.rrow.phase.hov .phaseSummarySeg{opacity:1}
+.rrow.phase.hov .phaseSummaryStart{opacity:1}
+.rrow.phase.hov .phaseSummaryLabel{color:var(--text)}
+.lrow.phase.hov .pbar{background:var(--text)}
+
+/* milestone row */
+.lrow.ms{cursor:default;font-size:10px;letter-spacing:.16em;color:var(--muted);font-weight:600}
+.dia{
+  position:absolute;width:9px;height:9px;background:var(--text);
+  transform:rotate(45deg);border-radius:1px;cursor:grab;z-index:5;
+  transition:transform .12s,background .12s;
+}
+.dia:hover{background:var(--accent);transform:translateY(-2px) rotate(45deg);z-index:9}
+.dia:active{cursor:grabbing}
+.dia .h{
+  position:absolute;top:50%;width:6px;height:14px;cursor:ew-resize;z-index:1;
+  transform:translateY(-50%) rotate(-45deg); /* 親(diaの回転45deg)を打ち消して当たり判定を水平に保つ */
+}
+.dia .h.l{left:-6px}
+.dia .h.r{right:-6px}
+body.fit .dia .h{cursor:default}
+/* 単発◆が端ドラッグで期間に伸びている最中の見た目(回転を解除してバンド風に) */
+.dia.stretching{
+  transform:none;height:18px;width:auto;border-radius:5px;
+  box-shadow:0 0 0 1.5px var(--panel);
+}
+.dia.stretching .h{transform:translateY(-50%) rotate(0deg)}
+.diaStem{position:absolute;width:1px;background:var(--stem);z-index:1;pointer-events:none}
+.msband{
+  position:absolute;height:18px;background:var(--text);border-radius:5px;
+  cursor:grab;z-index:5;display:flex;align-items:center;gap:6px;padding:0 8px;
+  color:var(--bg);white-space:nowrap;overflow:hidden;
+  box-shadow:0 0 0 1.5px var(--panel); /* 同列に並んだバンド同士の切れ目 */
+  transition:transform .12s,filter .12s,box-shadow .12s;
+}
+.msband .mbwrap{
+  display:flex;align-items:center;gap:6px;
+  max-width:calc(100% - 16px);overflow:hidden;will-change:transform;
+}
+.msband .mbl{font-size:10px;font-weight:700;white-space:nowrap}
+.msband .mbd{font-size:9px;opacity:.7;white-space:nowrap}
+.msband:hover{filter:brightness(1.15);transform:translateY(-2px);box-shadow:0 0 0 1.5px var(--panel),0 3px 8px rgba(20,29,40,.28);z-index:9}
+.msband:active{cursor:grabbing}
+.msband .h{position:absolute;top:0;width:8px;height:100%;cursor:ew-resize;z-index:1}
+.msband .h.l{left:-2px}
+.msband .h.r{right:-2px}
+body.fit .msband{cursor:not-allowed}
+body.fit .msband:hover{transform:none;filter:none;box-shadow:0 0 0 1.5px var(--panel)}
+body.fit .msband .h{cursor:default}
+/* 重要度: 3=赤色 / 2=黄色 */
+.dia.imp3,.msband.imp3{background:var(--imp);color:#fff}
+.dia.imp2,.msband.imp2{background:var(--imp2);color:#332800}
+.diaLbl.imp3 b{color:var(--imp)}
+.diaLbl.imp2 b{color:var(--imp2d)}
+.diaLbl{
+  position:absolute;font-size:10.5px;white-space:nowrap;pointer-events:none;line-height:14px;
+  background:var(--lblBg);padding:0 3px;border-radius:3px;z-index:2;
+}
+.diaLbl b{font-weight:600;color:var(--text)}
+.diaLbl span{color:var(--muted);font-size:9.5px;margin-left:4px}
+
+/* bars */
+.bar{
+  position:absolute;top:calc((var(--rowH) - var(--barH))/2);height:var(--barH);
+  border-radius:5px;z-index:2;
+  display:flex;align-items:center;padding:0 8px;font-size:11px;color:#fff;
+  cursor:grab;user-select:none;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(20,29,40,.15);
+  transition:box-shadow .12s,transform .12s;
+}
+.bar:hover{box-shadow:0 4px 10px rgba(20,29,40,.32);transform:translateY(-2px);z-index:9}
+/* Shift+クリックで複数選択したバー */
+.bar.selected{box-shadow:0 0 0 2px var(--accent),0 2px 6px rgba(20,29,40,.25);z-index:4}
+/* 移動ドラッグ中、元の位置に残す薄いグレーのゴースト */
+.bar.dragGhost{
+  background:var(--faint)!important;opacity:.35;box-shadow:none;
+  pointer-events:none;z-index:1;
+}
+.bar.dragGhost *{visibility:hidden}
+/* フェイズの集計バー自体のゴースト(通常の.phaseSummarySegより一段薄く) */
+/* フェイズの集計バー自体のゴースト(通常の.phaseSummarySegより一段薄く)。
+   ホバー時の反転ルール(.rrow.phase.hov .phaseSummarySeg{opacity:1})より詳細度を上げて確実に薄いままにする */
+.phaseSummarySeg.dragGhostPhase{opacity:.18;pointer-events:none}
+.rrow.phase.hov .phaseSummarySeg.dragGhostPhase{opacity:.18;background:var(--text)}
+.phaseSummaryStart.dragGhostPhase{opacity:.15;pointer-events:none}
+.rrow.phase.hov .phaseSummaryStart.dragGhostPhase{opacity:.15;background:var(--text)}
+.bar.selected:hover{box-shadow:0 0 0 2px var(--accent),0 4px 10px rgba(20,29,40,.32)}
+/* バーが画面外でも分かるよう、左側のタスク名の行にも選択中であることを示す */
+.lrow[data-tid].selected{box-shadow:inset 3px 0 0 var(--accent);background:rgba(47,111,191,.07)}
+/* ドラッグ矩形選択で複数選択したマイルストーン */
+.dia.selected{box-shadow:0 0 0 2px var(--accent);z-index:6}
+.msband.selected{box-shadow:0 0 0 2px var(--accent),0 0 0 1.5px var(--panel);z-index:6}
+/* ドラッグ矩形選択で複数選択したフェイズ */
+.lrow.phase.selected{box-shadow:inset 3px 0 0 var(--accent);background:rgba(47,111,191,.07)}
+.rrow.phase.selected{box-shadow:inset 0 0 0 2px var(--accent)}
+/* 空いている場所をドラッグしたときの矩形選択(マーキー) */
+#marqueeBox{
+  position:fixed;z-index:200;display:none;
+  border:1px solid var(--accent);background:rgba(47,111,191,.12);pointer-events:none;
+}
+/* ドラッグ中だけ表示される、バー左右外側の日付ラベル */
+.dragEdgeLbl{
+  position:absolute;display:flex;align-items:center;
+  background:#1A1D21;color:#fff;font-size:10px;font-weight:700;
+  padding:0 6px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:12;
+  box-shadow:0 2px 6px rgba(0,0,0,.28);
+}
+.dragEdgeLbl.tb{top:calc((var(--rowH) - var(--barH))/2);height:var(--barH)}
+.dragEdgeLbl.ms{height:16px}
+.dragEdgeLbl.s{transform:translateX(-100%)}
+.dragEdgeLbl.c{transform:translateX(-50%)}
+.bar.impB{z-index:3;font-weight:700}
+.barPastVeil{position:absolute;top:0;left:0;height:100%;background:var(--veil);pointer-events:none;border-radius:5px 0 0 5px}
+.dia.past,.msband.past{opacity:.55}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:11.5px;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;user-select:none;color:var(--muted);
+}
+.chip .cdot{width:7px;height:7px;border-radius:99px;flex:none}
+.chip .chipIcon{width:16px;height:16px;border-radius:99px;flex:none;object-fit:cover}
+.chip.on{border-color:var(--accent);background:rgba(47,111,191,.09);color:var(--text)}
+.avstack{display:flex;flex:none;align-items:center}
+.avstack .avs{margin-left:-5px}
+.avstack .avs:first-child{margin-left:0}
+.avstack .avs img{box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+.avstack .avs .dot:not(.none){box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+.asg .more{font-size:9.5px;color:var(--faint);margin-left:2px;flex:none}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;color:var(--text);line-height:1}
+.chk span{line-height:1;display:inline-block}
+/* ネイティブのチェックボックスは環境によって縦位置がブレやすいため、見た目を完全に自前でスタイリングする */
+.chk input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;
+  width:14px!important;height:14px!important;flex:none;margin:0;padding:0!important;
+  border:1.5px solid var(--line);border-radius:3px;
+  background:var(--panel);cursor:pointer;position:relative;
+  transition:background .12s,border-color .12s;
+}
+.chk input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.chk input[type=checkbox]:checked::after{
+  content:"";position:absolute;left:3.5px;top:1px;
+  width:4px;height:7px;border:solid #fff;border-width:0 2px 2px 0;
+  transform:rotate(45deg);
+}
+.bar:active{cursor:grabbing}
+.bar .h{position:absolute;top:0;width:8px;height:100%;cursor:ew-resize}
+.bar .h.l{left:-2px}.bar .h.r{right:-2px}
+.bar .blabel{
+  position:relative;left:6px;display:flex;align-items:center;gap:5px;
+  max-width:calc(100% - 12px);overflow:hidden;padding:2px;z-index:2;
+  will-change:transform;
+}
+.bar .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.bavstack{display:flex;align-items:center;flex:none}
+.bavstack img{
+  width:calc(var(--barH) - 8px);height:calc(var(--barH) - 8px);border-radius:99px;
+  object-fit:cover;box-shadow:0 0 0 1.5px rgba(255,255,255,.85);flex:none;display:block;
+}
+/* アイコン画像が未設定のメンバーは、画像の代わりに色丸(メンバーカラー)を同じ大きさで表示する */
+.bavstack .cdot{
+  width:calc(var(--barH) - 8px);height:calc(var(--barH) - 8px);border-radius:99px;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.85);flex:none;display:block;
+}
+.bavstack img:not(:first-child),.bavstack .cdot:not(:first-child){margin-left:-6px}
+.bar .out{
+  position:absolute;left:calc(100% + 7px);top:0;height:100%;
+  display:flex;align-items:center;font-size:10px;color:var(--muted);
+  font-weight:400;pointer-events:none;white-space:nowrap;
+}
+.bar .out.flip{left:auto;right:calc(100% + 7px)}
+.bar .out .on{color:var(--text);font-weight:600;font-size:10.5px;margin-right:5px}
+/* 広いバー: 普段から左端に開始日・右端に終了日を薄く表示 */
+.bar .edgeDate{
+  position:absolute;top:0;height:100%;
+  display:flex;align-items:center;font-size:10px;color:var(--muted);
+  font-weight:400;pointer-events:none;white-space:nowrap;
+}
+.bar .edgeDate.l{right:calc(100% + 7px)}
+.bar .edgeDate.r{left:calc(100% + 7px)}
+.dayChip{
+  display:inline-flex;align-items:center;gap:4px;margin-left:5px;padding:0 7px;border-radius:99px;
+  background:var(--hover);border:1px solid var(--line);font-size:9px;color:var(--muted);
+}
+.dragEdgeLbl .dayChip{background:rgba(255,255,255,.18);border-color:transparent;color:#fff}
+.bar.activeDrag .edgeDate{visibility:hidden}
+body.fit .bar,body.fit .dia{cursor:not-allowed}
+body.fit .grip{cursor:not-allowed}
+body.fit .rrow.phase{cursor:not-allowed}
+body.fit .bar .h{cursor:not-allowed}
+body.fit .lrow[data-tid],body.fit .lrow.phase,body.fit .lrow.ghost{cursor:not-allowed}
+/* バーの無い空欄部分(行の余白・マイルストーンレーン・背景)にも同じくnot-allowedを出す */
+body.fit .rrow[data-tid],body.fit .rrow.ms,body.fit #rinner{cursor:not-allowed}
+body.fit .rowAdd{cursor:not-allowed;pointer-events:none}
+body.fit .phToggle{cursor:pointer}
+body.fit .bar:hover{transform:none;box-shadow:0 1px 2px rgba(20,29,40,.15)}
+body.fit .dia:hover{transform:rotate(45deg)}
+
+/* background / overlay layers */
+#bglayer{position:absolute;top:0;left:0;z-index:0;pointer-events:none}
+.bgfill{position:absolute;top:0;height:100%}
+.wsat{background:var(--wkSat)}
+.wsun{background:var(--wkSun)}
+#overlay{position:absolute;top:0;left:0;pointer-events:none;z-index:6}
+#hoverCol{position:absolute;top:0;pointer-events:none;z-index:1;background:var(--hovCol);display:none}
+#hoverDate{
+  position:absolute;top:37px;transform:translateX(-50%);
+  background:var(--text);color:var(--bg);font-size:9.5px;font-weight:600;
+  padding:1.5px 7px;border-radius:99px;pointer-events:none;display:none;
+  white-space:nowrap;z-index:5;
+}
+.vline{position:absolute;top:0;width:1px;height:100%}
+.vline.today{background:var(--imp);opacity:1;width:2px;z-index:2}
+.todayBand{position:absolute;top:0;height:100%;background:var(--todayCol);pointer-events:none}
+/* 本番日の列: TODAYの帯と同じ考え方で、期間全体に薄い赤系(--impRgb)の帯を敷いて目立たせる。
+   フェイズ行の不透明な白背景(z-index:auto)より上、タスクバー(z-index:2)より下に表示するためz-index:1の独立レイヤーにする */
+.eventBand{position:absolute;top:0;height:100%;background:rgba(var(--impRgb),.16);pointer-events:none;z-index:1}
+.todayFlag{
+  position:absolute;bottom:-1px;transform:translateX(-50%);z-index:8;
+  background:var(--imp);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.03em;
+  padding:2px 8px 2px 7px;border-radius:5px 5px 5px 0;white-space:nowrap;pointer-events:none;
+  animation:todayRing 2s ease-out infinite;
+}
+/* 赤い波紋がふわっと広がって消える */
+@keyframes todayRing{
+  0%{box-shadow:0 2px 5px rgba(0,0,0,.22),0 0 0 0 rgba(var(--impRgb),.55)}
+  70%{box-shadow:0 2px 5px rgba(0,0,0,.22),0 0 0 8px rgba(var(--impRgb),0)}
+  100%{box-shadow:0 2px 5px rgba(0,0,0,.22),0 0 0 0 rgba(var(--impRgb),0)}
+}
+.vline.monthEdge{background:var(--mline)}
+.vline.msline{border-left:1px dashed var(--stem)}
+
+
+footer{padding:6px 16px;border-top:1px solid var(--line);color:var(--faint);font-size:11px;display:flex;gap:18px;flex-wrap:wrap;background:var(--panel);align-items:center}
+#shortcutsBtn{font-size:11px;color:var(--faint);padding:2px 6px;border-radius:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#shortcutsBtn:hover{background:var(--hover);color:var(--muted)}
+.shortcutGrid{display:flex;flex-direction:column;max-height:60vh;overflow-y:auto;padding-right:4px}
+.scSection{font-size:12px;font-weight:700;color:var(--text);margin:16px 0 4px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.scSection:first-child{margin-top:0}
+.scRow{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:5px 0;font-size:12px;color:var(--muted);line-height:1.5}
+.scKey{font-weight:600;color:var(--text);white-space:nowrap}
+
+/* ---------- modal ---------- */
+#modalBg{position:fixed;inset:0;background:rgba(20,22,26,.35);display:none;align-items:center;justify-content:center;z-index:100}
+#modalBg.show{display:flex}
+.modal{background:var(--panel);border-radius:10px;padding:22px;width:min(440px,92vw);max-height:85vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.12)}
+.modal.wide{width:min(560px,94vw)}
+.modal h2{font-size:14px;margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
+/* .fieldの子でも.chkラベル(チェックボックス行)はflex横並びを維持する(上のdisplay:blockに詳細度で負けないように) */
+.field label.chk{display:flex;margin-bottom:0}
+.field input,.field select{width:100%}
+.field label.chk input[type=checkbox]{width:14px;height:14px}
+.mRow{display:flex;gap:10px}
+.mRow .field{flex:1;min-width:0}
+.mFoot{display:flex;gap:8px;margin-top:16px}
+.mFoot .spacer{flex:1}
+.btn.primary{background:var(--text);color:var(--bg)}
+.btn.primary:hover{opacity:.85;color:var(--bg)}
+.btn.danger{color:#B4574A}
+.btn.danger:hover{background:#FBF0EE;color:#B4574A}
+
+.memList{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.memItem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;flex-wrap:wrap}
+.memItem .dot{width:16px;height:16px;border-radius:99px;flex:none;cursor:pointer;border:1px solid rgba(0,0,0,.08)}
+#fMemColorDot{width:22px;height:22px;border-radius:99px;flex:none;cursor:pointer;border:1px solid rgba(0,0,0,.08)}
+.memItem span{flex:1}
+.memItem button{color:var(--faint)}
+.memItem button:hover{color:#B4574A}
+.mAv{
+  width:30px;height:30px;border-radius:99px;flex:none;overflow:hidden;cursor:pointer;
+  background:var(--hover);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);
+}
+.mAv img{width:100%;height:100%;object-fit:cover;display:block}
+.mAv:hover{border-color:var(--accent)}
+.mini{font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:2px 7px;color:var(--muted)!important;flex:none}
+.mini:hover{color:#B4574A!important;border-color:#B4574A}
+.palRow{display:flex;gap:7px;align-items:center;width:100%;padding:8px 2px 2px;flex-wrap:wrap}
+.sw{width:19px;height:19px;border-radius:99px;cursor:pointer;border:2px solid transparent}
+.sw:hover{transform:scale(1.15)}
+.sw.on{border-color:var(--text)}
+.palRow input[type=color]{width:28px;height:23px;padding:1px;border:1px solid var(--line);border-radius:4px;background:none;cursor:pointer}
+.palRow .plbl{font-size:10.5px;color:var(--faint)}
+
+#txtOut{
+  width:100%;height:320px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  font-size:12px;line-height:1.7;border:1px solid var(--line);border-radius:6px;padding:12px;
+  white-space:pre;overflow:auto;resize:vertical;color:var(--text);background:var(--panel);
+}
+
+/* ---------- popover (クリック位置の近くに出る小窓) ---------- */
+#popover{
+  position:fixed;z-index:120;width:274px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.2);padding:14px;
+}
+#popover h3{font-size:12.5px;margin-bottom:10px;color:var(--text)}
+#popover .field{margin-bottom:9px}
+#popover .hint{font-size:10.5px;color:var(--faint);margin-top:6px}
+
+/* 行内の＋ボタンとゴースト追加行 */
+.rowAdd{
+  flex:none;width:20px;height:20px;border-radius:5px;border:1px solid var(--line);
+  color:var(--muted);opacity:0;font-size:13px;line-height:1;margin-left:auto;
+}
+.lrow:hover .rowAdd{opacity:1}
+.rowAdd:hover{color:var(--accent);border-color:var(--accent)}
+.lrow.phase .pname{flex:1}
+.lrow.ghost{color:var(--faint);font-size:12px;cursor:pointer}
+.lrow.ghost:hover{color:var(--accent)}
+
+/* ---------- PNG capture (全体表示を丸ごと展開してラスタライズ) ---------- */
+/* flex:1のままだとビューポートの余った縦幅まで伸びてしまい、PNG出力時に最後のタスクより下へ無駄な余白が写り込むため、
+   キャプチャ中はflexを外して内容量ぴったりの高さにする */
+#gantt.pngCap{height:auto!important;flex:none!important;padding-bottom:20px}
+#gantt.pngCap #lpane,#gantt.pngCap #lclip,#gantt.pngCap #rpane{
+  height:auto!important;overflow:visible!important;
+}
+#gantt.pngCap #lbody{transform:none!important}
+#gantt.pngCap .colRes,#gantt.pngCap #hoverCol,#gantt.pngCap #hoverDate,#gantt.pngCap .rowAdd{display:none!important}
+#gantt.pngCap .grip{opacity:0!important}
+
+/* ---------- print (日付範囲でヨコ方向に複数ページへ自然分割する) ---------- */
+#printPages{display:none}
+.printPage{display:flex;align-items:flex-start;page-break-after:always;break-after:page}
+.printPage:last-child{page-break-after:auto;break-after:auto}
+.printPageLeft{flex:none;position:relative}
+.printPageWin{overflow:hidden;position:relative;border-left:1px solid var(--line)}
+@media print{
+  @page{size:landscape;margin:8mm}
+  body>*{display:none!important}
+  body>#printPages{display:block!important}
+  /* ブラウザは印刷時にデフォルトで背景色を省略するため、明示的に印刷させる */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+
+<div id="titleBar">
+  <img id="hdrImg" alt="">
+  <div id="titleOverlay"></div>
+  <button id="titleCountdown" hidden></button>
+  <button id="titleBtn"><h1 id="titleText">プロジェクト名を設定</h1></button>
+</div>
+<header>
+  <div class="tgroup" title="現在の内容を消去して白紙から始めます、保存済みのファイルを読み込みます、またはファイルとして保存します">
+    <button class="btn" id="btnNew" title="現在の内容を消去して、新しい白紙のスケジュールから始めます">新規作成</button>
+    <button class="btn" id="btnImport" title="保存したファイルを読み込んで復元します">ファイルを開く</button>
+    <button class="btn" id="btnExport" title="編集を再開できるデータファイルとして保存します">ファイルに保存</button>
+  </div>
+  <div class="tgroup" title="表示に関する設定です">
+    <span class="segLabel">横幅:</span>
+    <div class="seg" id="zoomSeg" title="1日あたりの表示幅(ズーム)を切り替えます">
+      <button data-z="12" title="1日を狭く表示し、広い期間を一望できます">縮小</button>
+      <button data-z="20" class="on" title="標準的な表示幅です">標準</button>
+      <button data-z="30" title="1日を広く表示し、詳細を見やすくします">拡大</button>
+      <button data-z="fit" class="fitBtn" title="1画面に全体を収めて表示します。この間はドラッグでの編集ができません">全体(編集不可)</button>
+    </div>
+    <span class="segLabel">行の高さ:</span>
+    <div class="seg" id="densSeg" title="タスク行の高さ(見やすさ)を切り替えます">
+      <button data-d="s">低</button>
+      <button data-d="m" class="on">中</button>
+      <button data-d="l">高</button>
+    </div>
+    <span class="segLabel">表示倍率:</span>
+    <div class="scaleStepper" id="scaleStepper" title="ガントチャート全体の表示倍率(メニューより下の部分)">
+      <button id="scaleDown" title="縮小">−</button>
+      <span id="scaleLabel">100%</span>
+      <button id="scaleUp" title="拡大">＋</button>
+      <button id="scaleReset" title="等倍(100%)に戻す">↺</button>
+    </div>
+    <label class="chk" id="todayToggle" style="font-size:11px;color:var(--muted)" title="今日の位置(TODAY)を表示します。表示中は今日より前の期間が薄く表示されます"><input type="checkbox" id="todayChk" checked><span>本日表示</span></label>
+  </div>
+  <div class="tgroup" title="メンバーやカテゴリの管理です">
+    <span class="segLabel">管理:</span>
+    <button class="btn" id="btnMembers" title="担当者の名前・色・アイコンを登録・編集します">メンバー</button>
+    <button class="btn" id="btnCats" title="タスクに付けるカテゴリ(3DCGなど)を登録・編集します">カテゴリ</button>
+  </div>
+  <div class="tgroup" id="exportGroup" title="このスケジュールを書き出す操作です">
+    <button class="btn" id="exportMenuBtn">出力 ▾</button>
+    <div id="exportMenuPanel">
+      <button class="btn" id="btnText" title="内容をコピーできるテキストとして表示します">テキスト出力</button>
+      <button class="btn" id="btnPrint" title="印刷、またはPDFとして保存します">印刷 / PDF</button>
+      <button class="btn" id="btnPng" title="現在の全体表示を画像(PNG)として保存します">PNG保存</button>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <button class="themeToggle" id="btnTheme" title="ライト/ダークモード切替">
+    <span class="ttIcon sun">☀</span>
+    <span class="ttIcon moon">☾</span>
+    <span class="ttKnob"></span>
+  </button>
+  <input type="file" id="fileIn" accept=".json" style="display:none">
+  <input type="file" id="avFile" accept="image/*" style="display:none">
+  <input type="file" id="hdrFile" accept="image/*" style="display:none">
+</header>
+
+<div id="gantt">
+  <div id="lpane">
+    <div id="lhead"></div>
+    <div id="lclip"><div id="lbody"></div></div>
+    <div class="colRes" id="resAsg" title="ドラッグでタスク名の幅を変更(担当列は幅を保ったまま追従します)"></div>
+    <div class="colRes" id="resMain" title="ドラッグで担当列の幅を変更"></div>
+  </div>
+  <div id="rpane">
+    <div id="rinner"></div>
+  </div>
+  <button id="todayJumpL" class="todayJump l" title="TODAYへ移動">‹</button>
+  <button id="todayJumpR" class="todayJump r" title="TODAYへ移動">›</button>
+  <div id="fab">
+    <div id="fabMenu">
+      <button id="fabTask" class="fabItem" title="新しいタスクを追加します"><span>タスク</span></button>
+      <button id="fabMs" class="fabItem" title="マイルストーン(◆)を追加します"><span>マイルストーン</span></button>
+      <button id="fabPhase" class="fabItem" title="フェイズを追加します"><span>フェイズ</span></button>
+    </div>
+    <button id="fabMain" title="追加メニュー">＋</button>
+  </div>
+</div>
+<div id="printPages"></div>
+
+<footer>
+  <button id="shortcutsBtn" title="クリックで全ショートカット一覧を表示">バー: ドラッグ移動/クリック編集 ・ Shift+クリック: 複数選択 ・ Delete: 削除 ・ Ctrl+Z: 戻す　(クリックで詳細)</button>
+  <span class="spacer"></span>
+  <span id="nowStamp" title="このガントチャートを見ている(=最終更新している)日時"></span>
+  <span id="saveState"></span>
+  <span class="sep" id="appNameSep"></span>
+  <span id="appName">AA_GanttChartBoard</span>
+</footer>
+
+<div id="modalBg"><div class="modal" id="modalBody"></div></div>
+<div id="popover" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const DAY=86400000;
+const PALETTE=["#3B76C4","#4C9E7E","#9A6BC4","#C46B8A","#C4854C","#4C9EB8","#8AA044","#7A7F8A","#55939F"];
+/* 「藍上アオイ」または「アオイ」という名前で登録された場合は、専用のブランドカラーを自動で割り当てる */
+function resolveMemberColor(name,fallback){
+  return(name==="藍上アオイ"||name==="アオイ")?"#55939F":fallback;
+}
+
+let data=null;
+let zoom="20";      // "12" | "20" | "30" | "fit"
+let uiScale=1;       // ガントチャート全体の表示倍率(0.7〜1.5)。CSSのzoomと連動
+let selectedTaskIds=new Set(); // Shift+クリックで複数選択したタスクのID
+let selectedMsIds=new Set(); // ドラッグ矩形選択で複数選択したマイルストーンのID
+let selectedPhases=new Set(); // ドラッグ矩形選択で複数選択したフェイズ名
+let _marqueeJustSelected=false; // マーキー選択直後のclickで解除されないようにするフラグ
+let _barReg={};       // taskId -> {bar,t} の一覧。複数選択時のグループ移動で使う
+let dayW=30;
+let _mlbls=[];      // 月ラベルのスクロール追従用 {el,x0,x1}
+let _rs=null;       // 現在の描画状態(ホバー列表示用) {r,nDays,dayW,tW}
+
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parse=s=>new Date(s+"T00:00:00");
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const today=()=>parse(fmt(new Date()));
+const dfmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+const yfmt=d=>`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+const WD=["日","月","火","水","木","金","土"];
+
+/* ---------- 日本の祝日(内閣府の規定に準拠。現行ルール基準で2000年以降を想定) ---------- */
+/* 春分の日・秋分の日は天文計算が必要なため、広く使われている近似式(1980〜2099年に有効)で算出する */
+function vernalEquinoxDay(y){return Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4));}
+function autumnalEquinoxDay(y){return Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4));}
+/* 月内の第n○曜日(ハッピーマンデー制度)の日付を求める。month:1-12, weekday:0(日)〜6(土) */
+function nthWeekdayOfMonth(y,month,weekday,n){
+  const first=new Date(y,month-1,1);
+  const offset=(weekday-first.getDay()+7)%7;
+  return 1+offset+(n-1)*7;
+}
+const _holidayCache={};
+function buildJpHolidays(y){
+  const h={};
+  const add=(m,d,name)=>{if(d)h[`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`]=name;};
+  add(1,1,"元日");
+  add(1,nthWeekdayOfMonth(y,1,1,2),"成人の日");
+  if(y>=1967)add(2,11,"建国記念の日");
+  if(y>=2020)add(2,23,"天皇誕生日");
+  add(3,vernalEquinoxDay(y),"春分の日");
+  if(y>=2007)add(4,29,"昭和の日");
+  add(5,3,"憲法記念日");
+  if(y>=2007)add(5,4,"みどりの日");
+  add(5,5,"こどもの日");
+  if(y>=2003)add(7,nthWeekdayOfMonth(y,7,1,3),"海の日");
+  else if(y>=1996)add(7,20,"海の日");
+  if(y>=2016)add(8,11,"山の日");
+  if(y>=2003)add(9,nthWeekdayOfMonth(y,9,1,3),"敬老の日");
+  add(9,autumnalEquinoxDay(y),"秋分の日");
+  if(y>=2000)add(10,nthWeekdayOfMonth(y,10,1,2),y>=2020?"スポーツの日":"体育の日");
+  add(11,3,"文化の日");
+  add(11,23,"勤労感謝の日");
+  /* 振替休日: 祝日が日曜と重なった場合、翌日以降の最初の非祝日を休日にする */
+  for(const dstr of Object.keys(h).sort()){
+    const d=new Date(dstr+"T00:00:00");
+    if(d.getDay()!==0)continue;
+    let sub=addD(d,1);
+    while(h[fmt(sub)])sub=addD(sub,1);
+    h[fmt(sub)]="振替休日";
+  }
+  /* 国民の休日: 祝日と祝日に挟まれた平日(日曜を除く)を休日にする(例: シルバーウィーク) */
+  for(const dstr of Object.keys(h).sort()){
+    const d=new Date(dstr+"T00:00:00");
+    const between=addD(d,1),next=addD(d,2);
+    if(h[fmt(next)]&&!h[fmt(between)]&&between.getDay()!==0)h[fmt(between)]="国民の休日";
+  }
+  return h;
+}
+function jpHolidaysOfYear(y){
+  if(!_holidayCache[y])_holidayCache[y]=buildJpHolidays(y);
+  return _holidayCache[y];
+}
+/* dateStrの祝日名(祝日でなければundefined) */
+function jpHolidayName(dateStr){return jpHolidaysOfYear(+dateStr.slice(0,4))[dateStr];}
+/* 「いつ時点のガントチャートか」を示す共通の日時スタンプ(画面表示・テキスト出力・PNG出力で使う) */
+function nowStamp(){
+  const d=new Date();
+  const hh=String(d.getHours()).padStart(2,"0"),mi=String(d.getMinutes()).padStart(2,"0");
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]}) ${hh}:${mi}`;
+}
+const dwd=d=>`${dfmt(d)}(${WD[d.getDay()]})`;
+const ywd=d=>`${yfmt(d)}(${WD[d.getDay()]})`;
+const _mctx=document.createElement("canvas").getContext("2d");
+const FS='Inter,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic Medium",Meiryo,sans-serif';
+function tw(t,f){_mctx.font=f;return _mctx.measureText(t).width;}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+/* ドラッグ中はカーソルをbody全体に固定し、高速に動かしても他要素のカーソルに化けないようにする */
+function lockCursor(type){document.body.style.cursor=type;document.body.style.userSelect="none";}
+function unlockCursor(){document.body.style.cursor="";document.body.style.userSelect="";}
+function member(id){return data.members.find(m=>m.id===id)}
+function membersOf(t){return (t.memberIds||[]).map(id=>member(id)).filter(Boolean)}
+function catsOf(t){return (t.catIds||[]).map(id=>data.cats.find(c=>c.id===id)).filter(Boolean)}
+function cloneTask(t){return {...t,id:uid(),memberIds:[...(t.memberIds||[])],catIds:[...(t.catIds||[])]}}
+function ensureCat(name){
+  name=name.trim();
+  if(!name)return "";
+  let c=data.cats.find(x=>x.name===name);
+  if(!c){c={id:uid(),name,color:PALETTE[data.cats.length%PALETTE.length]};data.cats.push(c);}
+  return c.id;
+}
+/* フェイズが1つも無い状態で、フェイズ未指定のままタスクを作ろうとした場合だけ、
+   自動で「名称未設定」フェイズを1つ作ってそこに配置する(既にフェイズがある場合は何もしない=空欄のままでよい) */
+function resolveTaskPhase(requested){
+  if(requested)return requested;
+  if(!data.phases)data.phases=[];
+  if(data.phases.length===0)data.phases.push("名称未設定");
+  return data.phases[0]||"";
+}
+
+/* TODAYが画面外にスクロールされている場合、矢印を出してワンクリックで戻れるようにする */
+function updateTodayJump(){
+  const jl=$("#todayJumpL"),jr=$("#todayJumpR");
+  if(!jl||!jr)return;
+  if(!_rs||zoom==="fit"||data.ui?.showToday===false){jl.classList.remove("show");jr.classList.remove("show");return;}
+  const ti=dayIdx(_rs.r,fmt(today()));
+  if(ti<0||ti>=_rs.nDays){jl.classList.remove("show");jr.classList.remove("show");return;}
+  const todayX=ti*_rs.dayW+_rs.dayW/2;
+  const rp=$("#rpane");
+  const vLeft=rp.scrollLeft,vRight=vLeft+rp.clientWidth;
+  if(todayX<vLeft-2){jl.classList.add("show");jr.classList.remove("show");}
+  else if(todayX>vRight+2){jl.classList.remove("show");jr.classList.add("show");}
+  else{jl.classList.remove("show");jr.classList.remove("show");}
+}
+function jumpToToday(){
+  if(!_rs)return;
+  const ti=dayIdx(_rs.r,fmt(today()));
+  if(ti<0||ti>=_rs.nDays)return;
+  const todayX=ti*_rs.dayW+_rs.dayW/2;
+  const rp=$("#rpane");
+  const target=Math.max(0,Math.min(todayX-rp.clientWidth/2,rp.scrollWidth-rp.clientWidth));
+  rp.scrollTo({left:target,behavior:"smooth"});
+}
+$("#todayJumpL").addEventListener("click",jumpToToday);
+$("#todayJumpR").addEventListener("click",jumpToToday);
+
+function updateMonthLabels(){
+  const s=$("#rpane").scrollLeft;
+  /* 今どの月が左端に来ているか(=追従中のラベル)を特定し、その月にだけ西暦を付与する。
+     元々西暦付き(先頭月・1月)はスクロールに関わらず常に表示。 */
+  let activeIdx=-1;
+  for(let i=0;i<_mlbls.length;i++){
+    const it=_mlbls[i];
+    if(s+2>=it.x0&&s+2<it.x1){activeIdx=i;break;}
+  }
+  for(let i=0;i<_mlbls.length;i++){
+    const it=_mlbls[i];
+    const showYear=it.origHasYear||i===activeIdx;
+    const text=showYear?`${it.y}年${it.mo}月`:`${it.mo}月`;
+    if(it.el.textContent!==text)it.el.textContent=text;
+    const w=it.el.offsetWidth;
+    const x=Math.min(Math.max(it.x0,s+2),Math.max(it.x1-w-2,it.x0));
+    it.el.style.left=x+"px";
+  }
+}
+
+/* ---------- storage & history ---------- */
+/* 保存先を二重化: window.storage(メイン) + localStorage(フォールバック/即時避難先) */
+const STORE_KEY="aa-ganttchartboard:data";
+/* 旧ファイル名(migiri_schedule.html)時代に使っていた保存キー。新キーに何も無い場合だけ読み出し、
+   見つかったらそのまま新キーへコピーして以後は使わない(既存データを消さないための一度きりの移行措置) */
+const LEGACY_STORE_KEY="migiri-gantt:data";
+const store={
+  async get(){
+    let v=null;
+    if(window.storage){
+      try{const r=await window.storage.get(STORE_KEY);v=r?.value??null;}catch(e){}
+    }
+    if(v==null){
+      try{v=localStorage.getItem(STORE_KEY);}catch(e){}
+    }
+    if(v==null){
+      let legacy=null;
+      if(window.storage){
+        try{const r=await window.storage.get(LEGACY_STORE_KEY);legacy=r?.value??null;}catch(e){}
+      }
+      if(legacy==null){
+        try{legacy=localStorage.getItem(LEGACY_STORE_KEY);}catch(e){}
+      }
+      if(legacy!=null){
+        v=legacy;
+        await this.set(v); /* 新キーへ移行して保存し直す */
+      }
+    }
+    return v;
+  },
+  async set(v){
+    let ok=false;
+    try{localStorage.setItem(STORE_KEY,v);ok=true;}catch(e){}
+    if(window.storage){
+      try{await window.storage.set(STORE_KEY,v);ok=true;}catch(e){}
+    }
+    return ok;
+  },
+  /* タブを閉じる直前用: 同期的に書けるlocalStorageへ即時退避+非同期保存も発火 */
+  flush(v){
+    try{localStorage.setItem(STORE_KEY,v);}catch(e){}
+    if(window.storage){try{window.storage.set(STORE_KEY,v);}catch(e){}}
+  }
+};
+let saveTimer=null;
+let _hist=[],_redo=[],_histLock=false,_hoverTid=null,_hoverMid=null,_hoverPhase=null;
+function snapshot(){
+  const s=JSON.stringify(data);
+  if(_hist[_hist.length-1]!==s){
+    _hist.push(s);
+    if(_hist.length>60)_hist.shift();
+    _redo.length=0;
+  }
+}
+function nowHM(){const d=new Date();return `${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`}
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    saveTimer=null;
+    const ok=await store.set(JSON.stringify(data));
+    $("#saveState").textContent=ok?`自動保存済み ${nowHM()}`:"保存失敗";
+  },300);
+}
+function flushSave(){
+  if(!data)return;
+  clearTimeout(saveTimer);saveTimer=null;
+  store.flush(JSON.stringify(data));
+}
+/* タブを閉じる/隠す/フォーカスを失う瞬間に未保存分を即時書き込み */
+window.addEventListener("beforeunload",flushSave);
+window.addEventListener("pagehide",flushSave);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushSave();});
+window.addEventListener("blur",flushSave);
+function scheduleSave(){
+  $("#saveState").textContent="…";
+  if(!_histLock)snapshot();
+  persist();
+}
+function undo(){
+  if(_hist.length<2)return;
+  _redo.push(_hist.pop());
+  data=JSON.parse(_hist[_hist.length-1]);
+  _histLock=true;scheduleSave();_histLock=false;
+  applyTheme();applyUiScale();render();
+}
+function redo(){
+  if(!_redo.length)return;
+  const s=_redo.pop();
+  _hist.push(s);
+  data=JSON.parse(s);
+  _histLock=true;scheduleSave();_histLock=false;
+  applyTheme();applyUiScale();render();
+}
+function duplicateTask(t){
+  const i=data.tasks.indexOf(t);
+  const c=cloneTask(t);c.name=t.name+"(コピー)";
+  data.tasks.splice(i+1,0,c);
+  scheduleSave();render();
+}
+async function load(){
+  try{
+    const v=await store.get();
+    if(v){data=JSON.parse(v);}
+  }catch(e){}
+  if(!data)data={projectName:"",members:[],tasks:[],milestones:[]};
+  if(!data.cats)data.cats=[];
+  /* 旧形式の移行: cat文字列→catIds配列 / memberId→memberIds配列+noAsg */
+  for(const t of data.tasks){
+    if(t.cat){const cid=ensureCat(t.cat);t.catIds=t.catIds||[];if(cid&&!t.catIds.includes(cid))t.catIds.push(cid);}
+    delete t.cat;
+    if(t.catId){t.catIds=t.catIds||[];if(!t.catIds.includes(t.catId))t.catIds.push(t.catId);delete t.catId;}
+    if(!t.catIds)t.catIds=[];
+    if(t.memberId!==undefined){
+      if(t.memberId==="__none")t.noAsg=true;
+      else if(t.memberId)t.memberIds=[t.memberId];
+      delete t.memberId;
+    }
+    if(!t.memberIds)t.memberIds=[];
+    if(t.em){t.imp=3;delete t.em;}
+  }
+  for(const m of data.milestones){
+    if(m.em){m.imp=3;delete m.em;}
+  }
+  if(!data.phases){
+    data.phases=[];
+    for(const t of data.tasks){const p=t.phase||"";if(p&&!data.phases.includes(p))data.phases.push(p);}
+  }
+  if(data.ui){
+    if(data.ui.leftW)document.documentElement.style.setProperty("--leftW",data.ui.leftW+"px");
+    if(data.ui.asgW)document.documentElement.style.setProperty("--asgW",data.ui.asgW+"px");
+  }
+}
+
+/* ---------- range ---------- */
+function range(){
+  let min=today(),max=addD(today(),21);
+  let has=false;
+  for(const t of data.tasks){
+    const s=parse(t.start),e=parse(t.end);
+    if(!has){min=s;max=e;has=true;}
+    if(s<min)min=s; if(e>max)max=e;
+  }
+  for(const m of data.milestones){
+    const d=parse(m.date);
+    if(!has){min=d;max=d;has=true;}
+    if(d<min)min=d; if(d>max)max=d;
+  }
+  /* 本番日を設定している場合、そこまでは必ず表示範囲に含める。
+     まだタスク/マイルストーンが無い状態では「今日〜本番日」を映す(本番日だけを起点にはしない) */
+  if(data.eventDate){
+    const es=parse(data.eventDate);
+    const ee=data.eventEndDate?parse(data.eventEndDate):es;
+    if(!has){min=today();max=ee;has=true;}
+    if(es<min)min=es;
+    if(ee>max)max=ee;
+  }
+  return{start:addD(min,-2),end:addD(max,3)};
+}
+const dayIdx=(r,d)=>Math.round((parse(d)-r.start)/DAY);
+
+/* ---------- render ---------- */
+function groupsOf(){
+  for(const t of data.tasks){const p=t.phase||"";if(p&&!data.phases.includes(p))data.phases.push(p);}
+  const groups=[];
+  const un=data.tasks.filter(x=>!(x.phase||""));
+  if(un.length)groups.push({phase:"",tasks:un});
+  for(const p of data.phases)groups.push({phase:p,tasks:data.tasks.filter(x=>(x.phase||"")===p)});
+  return groups;
+}
+
+/* フェイズの開閉(高さを実測してmax-heightをアニメーションさせる) */
+function syncLayerHeights(){
+  const rinner=$("#rinner");if(!rinner)return;
+  const h=rinner.scrollHeight+"px";
+  const ov=$("#overlay"),bg=$("#bglayer"),hc=$("#hoverCol");
+  if(ov)ov.style.height=h;
+  if(bg)bg.style.height=h;
+  if(hc)hc.style.height=h;
+}
+function toggleAllPhases(willClose){
+  /* 裏技: フェイズの開閉ボタンをShift+クリックすると、全フェイズをまとめて開閉する */
+  data.ui={...(data.ui||{}),collapsedPhases:willClose?[...(data.phases||[])]:[]};
+  scheduleSave();render();
+}
+function togglePhaseCollapse(phase,grp){
+  const willClose=!grp.lWrap.classList.contains("collapsed");
+  if(willClose){
+    const hL=grp.lWrap.scrollHeight,hR=grp.rWrap.scrollHeight;
+    grp.lWrap.style.maxHeight=hL+"px";grp.rWrap.style.maxHeight=hR+"px";
+    grp.lWrap.offsetHeight; /* reflowを強制してtransitionを確実に発火させる */
+    requestAnimationFrame(()=>{
+      grp.lWrap.style.maxHeight="0px";grp.rWrap.style.maxHeight="0px";
+      syncLayerHeights();
+    });
+    grp.lWrap.classList.add("collapsed");grp.rWrap.classList.add("collapsed");
+    grp.lp.classList.add("collapsed");
+  }else{
+    grp.lWrap.classList.remove("collapsed");grp.rWrap.classList.remove("collapsed");
+    grp.lp.classList.remove("collapsed");
+    const hL=grp.lWrap.scrollHeight,hR=grp.rWrap.scrollHeight;
+    grp.lWrap.style.maxHeight=hL+"px";grp.rWrap.style.maxHeight=hR+"px";
+    syncLayerHeights();
+    const clear=()=>{grp.lWrap.style.maxHeight="none";grp.lWrap.removeEventListener("transitionend",clear);syncLayerHeights();};
+    grp.lWrap.addEventListener("transitionend",clear);
+  }
+  const list=new Set(data.ui?.collapsedPhases||[]);
+  if(willClose)list.add(phase);else list.delete(phase);
+  data.ui={...(data.ui||{}),collapsedPhases:[...list]};
+  scheduleSave();
+}
+
+function pairHover(l,rr){
+  const on=()=>{l.classList.add("hov");rr.classList.add("hov")};
+  const off=()=>{l.classList.remove("hov");rr.classList.remove("hov")};
+  l.addEventListener("mouseenter",on);l.addEventListener("mouseleave",off);
+  rr.addEventListener("mouseenter",on);rr.addEventListener("mouseleave",off);
+}
+
+/* フェイズ(見出し+配下タスク)をマウスオーバーした時だけ強調し、それ以外をゆっくりディゾルブして薄くする。
+   末尾のタスク行には黒い下線を付けて、フェイズの範囲がどこまでかを分かりやすくする。 */
+function setPhaseFocus(grp,active){
+  const gantt=$("#gantt");
+  gantt.classList.toggle("phaseFocus",active);
+  const method=active?"add":"remove";
+  grp.lp.classList[method]("inFocus");
+  grp.rp.classList[method]("inFocus");
+  grp.rows.forEach(x=>{x.l.classList[method]("inFocus");x.rr.classList[method]("inFocus");});
+  const last=grp.rows[grp.rows.length-1];
+  if(last){last.l.classList[method]("phaseEnd");last.rr.classList[method]("phaseEnd");}
+}
+
+/* 列幅の自動調整: 手動調整(data.ui)がなければ内容に合わせる。長すぎる場合は上限で止めてドラッグ調整 */
+function applyAutoCols(){
+  const rt=document.documentElement.style;
+  const avL=(DENS[data?.ui?.density]||DENS.m).av;
+  if(!data.ui?.asgW){
+    let w=48;
+    for(const m of data.members)w=Math.max(w,avL+6+tw(m.name,'11px '+FS)+4);
+    rt.setProperty("--asgW",Math.min(Math.max(Math.ceil(w),56),170)+"px");
+  }
+  if(!data.ui?.leftW){
+    let nameW=90;
+    for(const t of data.tasks){
+      let w=tw(t.name,'600 12.5px '+FS);
+      for(const c of catsOf(t).slice(0,2))w+=tw(c.name,'9.5px '+FS)+30;
+      nameW=Math.max(nameW,w);
+    }
+    for(const p of data.phases)nameW=Math.max(nameW,tw(p,'700 13.5px '+FS)+18);
+    const asgW=parseInt(getComputedStyle(document.documentElement).getPropertyValue("--asgW"))||86;
+    const total=16+12+10+Math.ceil(nameW)+10+asgW+16+6;
+    rt.setProperty("--leftW",Math.min(Math.max(total,220),480)+"px");
+  }
+}
+
+function render(){
+  _barReg={};
+  applyTitleBar();
+  $("#todayChk").checked=data.ui?.showToday!==false;
+  applyAutoCols();
+  const lbody=$("#lbody"),rinner=$("#rinner");
+  const r=range();
+  const nDays=Math.round((r.end-r.start)/DAY)+1;
+
+  const fit=zoom==="fit";
+  document.body.classList.toggle("fit",fit);
+  if(fit){
+    const avail=$("#rpane").clientWidth-2;
+    dayW=Math.max(avail/nDays,3);
+  }else{
+    dayW=+zoom;
+  }
+  const tW=nDays*dayW;
+  lbody.innerHTML="";
+  rinner.innerHTML="";
+  rinner.style.width=tW+"px";
+  _mlbls=[];
+
+  /* ---- right header (dates) ---- */
+  const rhead=document.createElement("div");rhead.className="rhead";
+  rhead.style.width=tW+"px";
+  let curM=-1;
+  /* 圧縮時も間引かず「毎日」表示を維持し、フォントだけ段階的に縮小する。
+     それでも収まらない(dayW<8)場合だけ日付セル自体を表示しない。 */
+  let dateFont=null;
+  if(dayW>=22)dateFont=10.5;
+  else if(dayW>=14)dateFont=10;
+  else if(dayW>=11)dateFont=9;
+  else if(dayW>=8)dateFont=7.5;
+  /* 本番日の背景タイント: 週末の背景と同じくヘッダーの一番上から敷きたいので、
+     日付セルより先に描画して背面に回す(日付の文字が隠れないように) */
+  let evCsi=-1,evCei=-1;
+  if(data.eventDate){
+    const esi=dayIdx(r,data.eventDate);
+    const eei=dayIdx(r,data.eventEndDate||data.eventDate);
+    evCsi=Math.max(esi,0);evCei=Math.min(eei,nDays-1);
+    if(evCei>=evCsi){
+      const hb=document.createElement("div");hb.className="eventBand";
+      hb.style.left=(evCsi*dayW)+"px";
+      hb.style.width=((evCei-evCsi+1)*dayW)+"px";
+      hb.style.top="0";hb.style.height="100%";hb.style.zIndex="0";
+      rhead.appendChild(hb);
+    }
+  }
+  for(let i=0;i<nDays;i++){
+    const d=addD(r.start,i);
+    const holiday=jpHolidayName(fmt(d));
+    if(dayW>=4&&(d.getDay()===6||d.getDay()===0||holiday)){
+      const f=document.createElement("div");f.className="hFill";
+      f.classList.add(d.getDay()===6&&!holiday?"wsat":"wsun");
+      f.style.left=(i*dayW)+"px";f.style.width=dayW+"px";
+      rhead.appendChild(f);
+    }
+    if(d.getMonth()!==curM){
+      curM=d.getMonth();
+      if(i>0){
+        const tk=document.createElement("div");tk.className="mTick";
+        tk.style.left=(i*dayW)+"px";rhead.appendChild(tk);
+      }
+      const ml=document.createElement("div");ml.className="monthLbl";
+      ml.style.left=(i*dayW)+"px";
+      const origHasYear=(i===0||d.getMonth()===0);
+      ml.textContent=origHasYear
+        ?`${d.getFullYear()}年${d.getMonth()+1}月`
+        :`${d.getMonth()+1}月`;
+      rhead.appendChild(ml);
+      if(_mlbls.length)_mlbls[_mlbls.length-1].x1=i*dayW;
+      _mlbls.push({el:ml,x0:i*dayW,x1:tW,y:d.getFullYear(),mo:d.getMonth()+1,origHasYear});
+    }
+    if(dateFont!=null){
+      const dc=document.createElement("div");dc.className="dayCell";
+      dc.style.left=(i*dayW)+"px";
+      dc.style.width=dayW+"px";
+      dc.style.fontSize=dateFont+"px";
+      if(d.getDay()===6&&!holiday)dc.classList.add("sat");
+      if(d.getDay()===0||holiday)dc.classList.add("sun");
+      if(fmt(d)===fmt(today()))dc.classList.add("today");
+      if(data.ui?.showToday!==false&&fmt(d)<fmt(today()))dc.classList.add("pastDate");
+      if(data.eventDate){
+        const ds=fmt(d),evEnd=data.eventEndDate||data.eventDate;
+        if(ds>=data.eventDate&&ds<=evEnd)dc.classList.add("eventday");
+      }
+      if(holiday)dc.title=holiday;
+      const wdFont=Math.max(dateFont-1.5,6);
+      dc.innerHTML=`<div>${d.getDate()}</div><div class="wd" style="font-size:${wdFont}px">${WD[d.getDay()]}</div>`;
+      rhead.appendChild(dc);
+    }
+  }
+  /* 本番日: 個々のセルではなく期間全体を1つの枠で囲んで強調する(背景タイントは上のループ前で描画済み) */
+  if(evCei>=evCsi){
+    const box=document.createElement("div");box.className="eventDateBox";
+    box.style.left=(evCsi*dayW)+"px";
+    box.style.width=((evCei-evCsi+1)*dayW)+"px";
+    rhead.appendChild(box);
+  }
+  rinner.appendChild(rhead);
+  const hd=document.createElement("div");hd.id="hoverDate";
+  rhead.appendChild(hd);
+  const hc=document.createElement("div");hc.id="hoverCol";
+  rinner.appendChild(hc);
+  _rs={r,nDays,dayW,tW};
+
+  /* ---- background layer ---- */
+  const bg=document.createElement("div");bg.id="bglayer";
+  bg.style.width=tW+"px";
+  /* 月の互い違い帯(隔月でうっすら色を敷き、月の切れ目を面で判別できるように) */
+  {
+    let mi=0,bandStart=0,curMo=addD(r.start,0).getMonth();
+    for(let i=1;i<=nDays;i++){
+      const mo=i<nDays?addD(r.start,i).getMonth():-1;
+      if(mo!==curMo){
+        if(mi%2===1){
+          const b=document.createElement("div");b.className="mband";
+          b.style.left=(bandStart*dayW)+"px";
+          b.style.width=((i-bandStart)*dayW)+"px";
+          b.style.background="var(--mband)";
+          bg.appendChild(b);
+        }
+        bandStart=i;curMo=mo;mi++;
+      }
+    }
+  }
+  for(let i=0;i<nDays;i++){
+    const d=addD(r.start,i);
+    const holiday=jpHolidayName(fmt(d));
+    if(dayW>=4&&(d.getDay()===6||d.getDay()===0||holiday)){
+      const f=document.createElement("div");f.className="bgfill";
+      f.classList.add(d.getDay()===6&&!holiday?"wsat":"wsun");
+      f.style.left=(i*dayW)+"px";f.style.width=dayW+"px";
+      bg.appendChild(f);
+    }
+    if(d.getDate()===1){
+      const v=document.createElement("div");v.className="vline monthEdge";
+      v.style.left=(i*dayW)+"px";bg.appendChild(v);
+    }
+  }
+  for(const m of data.milestones){
+    const mc=m.imp===3?"var(--imp)":m.imp===2?"var(--imp2)":"var(--stem)";
+    const v=document.createElement("div");v.className="vline msline";
+    v.style.left=(dayIdx(r,m.date)*dayW+dayW/2)+"px";v.style.borderLeftColor=mc;bg.appendChild(v);
+    if(m.end){
+      const v2=document.createElement("div");v2.className="vline msline";
+      v2.style.left=(dayIdx(r,m.end)*dayW+dayW/2)+"px";v2.style.borderLeftColor=mc;bg.appendChild(v2);
+    }
+  }
+  /* 今日の列: 縦線・薄い背景の帯・TODAYフラグで示す(TODAYチェックボックスでON/OFF) */
+  const ti=dayIdx(r,fmt(today()));
+  const showToday=data.ui?.showToday!==false;
+  /* TODAYを表示している間だけ、今日より前に完全に終わっているタスク/マイルストーンを薄くする */
+  const dimPast=showToday;
+  if(showToday&&ti>=0&&ti<nDays){
+    const tb=document.createElement("div");tb.className="todayBand";
+    tb.style.left=(ti*dayW)+"px";tb.style.width=dayW+"px";
+    bg.appendChild(tb);
+    const tf=document.createElement("div");tf.className="todayFlag";
+    tf.textContent="TODAY";
+    tf.style.left=(ti*dayW+dayW/2)+"px";
+    rhead.appendChild(tf);
+  }
+  rinner.appendChild(bg);
+
+  /* 本番日の帯: フェイズ行の不透明な白背景(z-index:auto)より上、タスクバー(z-index:2)より下に見せたいので、
+     bglayer(z-index:0)の中には入れず、独立したz-index:1のレイヤーとして重ねる */
+  let evBand=null;
+  if(data.eventDate){
+    const esi=dayIdx(r,data.eventDate);
+    const eei=dayIdx(r,data.eventEndDate||data.eventDate);
+    const csi=Math.max(esi,0),cei=Math.min(eei,nDays-1);
+    if(cei>=csi){
+      evBand=document.createElement("div");evBand.className="eventBand";
+      evBand.style.left=(csi*dayW)+"px";
+      evBand.style.width=((cei-csi+1)*dayW)+"px";
+      rinner.appendChild(evBand);
+    }
+  }
+
+  /* ---- milestone lane (常時表示・バンドは文字入り/同列パッキング) ---- */
+  {
+    const impOf=o=>o.imp||1;
+    const ms=[...data.milestones].sort((a,b)=>a.date<b.date?-1:1);
+    const F1='600 10.5px '+FS;
+    const F2='9.5px '+FS;
+    /* 1) 各要素の基本情報。バンドは内側にラベルが収まるか判定 */
+    const items=ms.map(m=>{
+      const si=dayIdx(r,m.date);
+      const ei=m.end?dayIdx(r,m.end):si;
+      const x=si*dayW+dayW/2;
+      const isRange=!!m.end;
+      const bandL=si*dayW+1;
+      const bandW=isRange?Math.max((ei-si+1)*dayW-2,8):0;
+      const dstr=isRange?`${dfmt(parse(m.date))}〜${dfmt(parse(m.end))}`:dfmt(parse(m.date));
+      const inTextW=tw(m.name,'700 10px '+FS)+tw(" "+dstr,'9px '+FS)+20;
+      const internal=isRange&&bandW>=inTextW;
+      return{m,si,ei,x,isRange,bandL,bandW,dstr,internal,imp:impOf(m)};
+    });
+    /* 2) 外側ラベル(点◆と、文字が収まらない狭いバンド)のレーン割当 */
+    const lanesEnd=[];
+    for(const it of items){
+      if(it.internal)continue;
+      const w=tw(it.m.name,F1)+tw(" "+it.dstr,F2)+8;
+      let lx=it.x+9;
+      if(lx+w>tW-4)lx=Math.max(it.x-9-w,2);
+      let lane=0;
+      for(;lane<lanesEnd.length;lane++){if(lx>=lanesEnd[lane]+14)break;}
+      lanesEnd[lane]=lx+w;
+      it.lx=lx;it.lane=lane;
+    }
+    const laneN=lanesEnd.length;
+    /* 3) バンドのサブレーン: 触れ合う程度(2px)まで詰めて同列に並べる */
+    const bands=items.filter(i=>i.isRange).sort((a,b)=>a.bandL-b.bandL);
+    const bEnd=[];
+    for(const bd of bands){
+      let bl=0;
+      for(;bl<bEnd.length;bl++){if(bd.bandL>=bEnd[bl]+2)break;}
+      bEnd[bl]=bd.bandL+bd.bandW;
+      bd.bLane=bl;
+    }
+    const bandN=bEnd.length;
+    const hasPoints=items.some(i=>!i.isRange);
+    const labelEnd=6+laneN*15;
+    const pointY=labelEnd+6;
+    const bandY0=(hasPoints?labelEnd+22:labelEnd+4);
+    const H=Math.max(hasPoints?labelEnd+24:0,bandN?bandY0+bandN*22+4:0,labelEnd+8,36);
+    const lms=document.createElement("div");lms.className="lrow ms";
+    lms.style.height=H+"px";
+    lms.innerHTML=`<span style="flex:1"></span><button class="rowAdd" title="マイルストーンを追加">＋</button>`;
+    lms.querySelector(".rowAdd").onclick=e=>{if(zoom==="fit")return;e.stopPropagation();quickMsPopover(e.clientX,e.clientY,null);};
+    const rms=document.createElement("div");rms.className="rrow ms";
+    rms.style.height=H+"px";
+    if(zoom!=="fit"){
+      rms.title="ダブルクリックでこの日付に「名称未設定」マイルストーンを追加";
+      rms.addEventListener("dblclick",e=>{
+        if(e.target!==rms)return;
+        const rc=rms.getBoundingClientRect();
+        const di=Math.min(Math.max(Math.floor((e.clientX-rc.left)/(dayW*uiScale)),0),nDays-1);
+        data.milestones.push({id:uid(),name:"名称未設定",date:fmt(addD(r.start,di))});
+        data.milestones.sort((a,b)=>a.date<b.date?-1:1);
+        scheduleSave();render();
+      });
+    }
+    for(const it of items){
+      const impCls=it.imp===3?" imp3":(it.imp===2?" imp2":"");
+      const pastCls=(dimPast&&(it.isRange?it.ei:it.si)<ti)?" past":"";
+      const yMark=it.isRange?bandY0+it.bLane*22:pointY;
+      let stem=null,l=null;
+      if(!it.internal){
+        const lblTop=6+(laneN-1-it.lane)*15;
+        stem=document.createElement("div");stem.className="diaStem";
+        stem.style.left=it.x+"px";
+        stem.style.top=(lblTop+13)+"px";
+        stem.style.height=Math.max(yMark-1-(lblTop+13),0)+"px";
+        rms.appendChild(stem);
+        l=document.createElement("div");l.className="diaLbl"+impCls;
+        l.style.left=it.lx+"px";l.style.top=lblTop+"px";
+        l.innerHTML=`<b>${esc(it.m.name)}</b><span>${it.dstr}</span>`;
+      }
+      let d;
+      if(it.isRange){
+        d=document.createElement("div");d.className="msband"+impCls+pastCls;
+        d.dataset.mid=it.m.id;
+        d.style.left=it.bandL+"px";
+        d.style.width=it.bandW+"px";
+        d.style.top=yMark+"px";
+        d.title=`${it.m.name} (${it.m.date}〜${it.m.end}) — ドラッグで移動 / 端をつまんで期間変更`;
+        const inner=it.internal?`<span class="mbwrap"><span class="mbl">${esc(it.m.name)}</span><span class="mbd">${it.dstr}</span></span>`:"";
+        d.innerHTML=inner+`<div class="h l"></div><div class="h r"></div>`;
+      }else{
+        d=document.createElement("div");d.className="dia"+impCls+pastCls;
+        d.dataset.mid=it.m.id;
+        d.style.left=(it.x-4.5)+"px";d.style.top=yMark+"px";
+        d.title=`${it.m.name} (${it.m.date}) — ドラッグで移動 / 端をつまんで期間に変更`;
+        d.innerHTML=`<div class="h l"></div><div class="h r"></div>`;
+      }
+      rms.appendChild(d);
+      if(l)rms.appendChild(l);
+      if(zoom==="fit")continue;
+      d.addEventListener("mouseenter",()=>{_hoverMid=it.m.id});
+      d.addEventListener("mouseleave",()=>{if(_hoverMid===it.m.id)_hoverMid=null});
+      d.addEventListener("mousedown",ev=>{
+        ev.preventDefault();
+        const onHandle=ev.target.classList.contains("h");
+        const mode=onHandle?(ev.target.classList.contains("l")?"l":"r"):"move";
+        const dup=ev.altKey&&mode==="move"; /* Alt(Option)+ドラッグ = 複製(本体移動時のみ) */
+        /* 複数選択中(2件以上)のマイルストーンのどれかを移動ドラッグした場合は、まとめて動かす */
+        const groupMode=mode==="move"&&!dup&&selectedMsIds.has(it.m.id)&&selectedMsIds.size>1;
+        const msGroup=groupMode
+          ?items.filter(x=>x.m!==it.m&&selectedMsIds.has(x.m.id)).map(x=>({it:x,el:rms.querySelector(`[data-mid="${x.m.id}"]`),s0:x.si,e0:x.ei}))
+          :[];
+        const x0=ev.clientX;
+        const s0=it.si,e0=it.ei;
+        let moved=false,ns=s0,ne=e0;
+        let target=d;
+        const g=$("#gantt");
+        g.classList.add("dragBars");
+        lockCursor(dup?"copy":mode==="move"?"grabbing":"ew-resize");
+        if(dup){
+          target=d.cloneNode(true);
+          target.style.opacity=".75";
+          target.style.cursor="copy";
+          d.parentNode.appendChild(target);
+          d.classList.add("activeDrag");
+        }else{
+          if(stem)stem.classList.add("activeDrag");
+          if(l)l.classList.add("activeDrag");
+          msGroup.forEach(g=>{if(g.el)g.el.classList.add("activeDrag");});
+        }
+        target.classList.add("activeDrag");
+        /* ドラッグ中だけ、期間なら左右外側に開始日・終了日、単発なら1つだけ日付ラベルを表示。
+           単発が端ドラッグで期間に変わった場合はライブで2つ表示に切り替える */
+        const sLbl=document.createElement("div");sLbl.className="dragEdgeLbl ms s";
+        const eLbl=document.createElement("div");eLbl.className="dragEdgeLbl ms";
+        target.parentNode.appendChild(sLbl);
+        target.parentNode.appendChild(eLbl);
+        sLbl.style.display=it.isRange?"":"none";
+        const updateMsLbls=(ns,ne,nowRange)=>{
+          const markerH=nowRange?18:9;
+          const lblTop=yMark+(nowRange&&!it.isRange?-4.5:0)+(markerH-16)/2;
+          if(nowRange){
+            sLbl.style.display="";
+            eLbl.classList.remove("c");
+            const leftPx=ns*dayW+1,widthPx=Math.max((ne-ns+1)*dayW-2,8);
+            sLbl.textContent=dfmt(addD(r.start,ns));
+            sLbl.style.left=(leftPx-6)+"px";
+            sLbl.style.top=lblTop+"px";
+            eLbl.textContent=dfmt(addD(r.start,ne));
+            eLbl.style.left=(leftPx+widthPx+6)+"px";
+            eLbl.style.top=lblTop+"px";
+          }else{
+            sLbl.style.display="none";
+            eLbl.classList.add("c");
+            const cx=ns*dayW+dayW/2;
+            eLbl.textContent=dfmt(addD(r.start,ns));
+            eLbl.style.left=cx+"px";
+            eLbl.style.top=lblTop+"px";
+          }
+        };
+        updateMsLbls(s0,e0,it.isRange);
+        const mm=e=>{
+          const dd=Math.round((e.clientX-x0)/(dayW*uiScale));
+          if(dd!==0)moved=true;
+          if(mode==="move"){
+            const shift=Math.min(Math.max(dd,-s0),(nDays-1)-e0);
+            ns=s0+shift;ne=e0+shift;
+            if(groupMode){
+              msGroup.forEach(g=>{
+                if(!g.el)return;
+                const gs=g.s0+shift,ge=g.e0+shift;
+                if(g.it.isRange){
+                  g.el.style.left=(gs*dayW+1)+"px";
+                }else{
+                  g.el.style.left=(gs*dayW+dayW/2-4.5)+"px";
+                }
+              });
+            }
+          }else if(mode==="l"){
+            ns=Math.min(Math.max(s0+dd,0),e0);
+          }else{
+            ne=Math.max(Math.min(e0+dd,nDays-1),s0);
+          }
+          const nx=ns*dayW+dayW/2;
+          const nowRange=it.isRange||ns!==ne;
+          if(nowRange){
+            if(!it.isRange&&!target.classList.contains("stretching")){
+              /* 単発◆が端ドラッグで伸び始めた瞬間、見た目を期間(バンド)風に切り替える */
+              target.classList.add("stretching");
+              target.style.top=(yMark-4.5)+"px";
+            }
+            target.style.left=(ns*dayW+1)+"px";
+            target.style.width=Math.max((ne-ns+1)*dayW-2,8)+"px";
+          }else{
+            target.style.left=(nx-4.5)+"px";
+          }
+          const ndstr=nowRange
+            ?`${dfmt(addD(r.start,ns))}〜${dfmt(addD(r.start,ne))}`
+            :dfmt(addD(r.start,ns));
+          if(!dup){
+            if(stem)stem.style.left=nx+"px";
+            if(l){
+              l.style.left=(it.lx+(nx-it.x))+"px";
+              l.querySelector("span").textContent=ndstr;
+            }
+            const mbd=d.querySelector(".mbd");
+            if(mbd)mbd.textContent=ndstr;
+          }
+          updateMsLbls(ns,ne,nowRange);
+        };
+        const mu=()=>{
+          document.removeEventListener("mousemove",mm);
+          document.removeEventListener("mouseup",mu);
+          unlockCursor();
+          if(sLbl)sLbl.remove();
+          eLbl.remove();
+          g.classList.remove("dragBars");
+          d.classList.remove("activeDrag");
+          if(stem)stem.classList.remove("activeDrag");
+          if(l)l.classList.remove("activeDrag");
+          msGroup.forEach(gr=>{if(gr.el)gr.el.classList.remove("activeDrag");});
+          if(dup){
+            target.remove();
+            if(moved){
+              const nm={id:uid(),name:it.m.name,date:fmt(addD(r.start,ns))};
+              if(it.m.end)nm.end=fmt(addD(r.start,ne));
+              if(it.m.imp)nm.imp=it.m.imp;
+              data.milestones.push(nm);
+              data.milestones.sort((a,b)=>a.date<b.date?-1:1);
+              scheduleSave();render();
+            }
+            return;
+          }
+          if(moved){
+            it.m.date=fmt(addD(r.start,ns));
+            if(ns===ne)delete it.m.end; /* 期間型を縮めて単日になったら単発マイルストーンに戻す */
+            else if(it.isRange||ns!==ne)it.m.end=fmt(addD(r.start,ne));
+            if(groupMode){
+              const shift=ns-s0;
+              msGroup.forEach(gr=>{
+                gr.it.m.date=fmt(addD(r.start,gr.s0+shift));
+                if(gr.it.isRange)gr.it.m.end=fmt(addD(r.start,gr.e0+shift));
+              });
+            }
+            data.milestones.sort((a,b)=>a.date<b.date?-1:1);
+            scheduleSave();render();
+          }else openMsModal(it.m);
+        };
+        document.addEventListener("mousemove",mm);
+        document.addEventListener("mouseup",mu);
+      });
+    }
+    pairHover(lms,rms);
+    lbody.appendChild(lms);rinner.appendChild(rms);
+  }
+
+  /* ---- task groups ---- */
+  const groups=groupsOf();
+  const phaseGroups={};
+  for(const g of groups){
+    let lTarget=lbody,rTarget=rinner;
+    if(g.phase){
+      const lp=document.createElement("div");lp.className="lrow phase";
+      lp.dataset.phase=g.phase;lp.style.height=(DENS[data?.ui?.density]||DENS.m).phase+"px";
+      const collapsed=(data.ui?.collapsedPhases||[]).includes(g.phase);
+      if(collapsed)lp.classList.add("collapsed");
+      lp.innerHTML=`<button class="phToggle" title="タスクの表示/非表示(Shift+クリックで全フェイズをまとめて開閉)">▾</button><span class="grip" title="ドラッグで並び替え">⠿</span><span class="pbar"></span><span class="pname">${esc(g.phase)}</span><button class="rowAdd" title="${esc(g.phase)}にタスクを追加">＋</button>`;
+      /* フェイズ名あたりもどこを掴んでも良いようにする: 動かさず短く離せば編集、動かすか長押しすればそのままドラッグ(並び替え)開始 */
+      lp.addEventListener("mousedown",e=>{
+        if(zoom==="fit")return;
+        if(e.target.closest(".grip,.rowAdd,.phToggle"))return;
+        const sx=e.clientX,sy=e.clientY;
+        let started=false;
+        const cleanup=()=>{
+          clearTimeout(timer);
+          document.removeEventListener("mousemove",onMove);
+          document.removeEventListener("mouseup",onUp);
+        };
+        const startDrag=()=>{
+          if(started)return;
+          started=true;cleanup();startPhaseReorder(e,g.phase);
+        };
+        const onMove=me=>{
+          if(Math.abs(me.clientX-sx)>4||Math.abs(me.clientY-sy)>4)startDrag();
+        };
+        const onUp=()=>{
+          cleanup();
+          if(!started)openPhaseModal(g.phase); /* 動かさないまま離した=短いクリックとして編集を開く */
+        };
+        const timer=setTimeout(startDrag,350); /* 動かさなくても長押しすればドラッグ開始 */
+        document.addEventListener("mousemove",onMove);
+        document.addEventListener("mouseup",onUp);
+      });
+      lp.querySelector(".rowAdd").onclick=e=>{
+        if(zoom==="fit")return;
+        e.stopPropagation();quickTaskPopover(e.clientX,e.clientY,g.phase);
+      };
+      const gripEl=lp.querySelector(".grip");
+      gripEl.addEventListener("mousedown",e=>{
+        if(zoom==="fit")return;
+        e.preventDefault();e.stopPropagation();startPhaseReorder(e,g.phase);
+      });
+      const rp=document.createElement("div");rp.className="rrow phase";
+      rp.dataset.phase=g.phase;
+      rp.style.height=(DENS[data?.ui?.density]||DENS.m).phase+"px";
+      rp.title="ドラッグで並び替え";
+      rp.addEventListener("mousedown",e=>{
+        if(zoom==="fit")return;
+        e.preventDefault();startPhaseReorder(e,g.phase);
+      });
+      lbody.appendChild(lp);rinner.appendChild(rp);
+      /* フェイズ配下タスクの最小開始日〜最大終了日をまとめた集計バー。閉じていても常に表示され、フェイズ全体のスケール感がひと目で分かる */
+      if(g.tasks.length){
+        let minStart=g.tasks[0].start,maxEnd=g.tasks[0].end;
+        for(const t of g.tasks){
+          if(t.start<minStart)minStart=t.start;
+          if(t.end>maxEnd)maxEnd=t.end;
+        }
+        const ms=dayIdx(r,minStart),me=dayIdx(r,maxEnd);
+        const barLeftPx=ms*dayW,barWidthPx=Math.max((me-ms+1)*dayW-2,12);
+        /* ラベル(フェイズ名)の幅をあらかじめ測って、バーを「左線 - 文字 - 右線」に分割する位置を決める */
+        const labelW=tw(g.phase,`700 11px ${FS}`);
+        const labelLeft=barLeftPx+14;
+        const gap=6;
+        const seg1W=Math.max(labelLeft-gap-barLeftPx,0); /* 左側の線(始点〜文字の手前) */
+        const seg2Left=labelLeft+labelW+gap;
+        const seg2W=Math.max(barLeftPx+barWidthPx-seg2Left,8); /* 右側の線(文字の後ろ〜矢尻) */
+
+        /* ドラッグの当たり判定は全幅を透明なまま1つの要素でカバーする(掴む場所を選ばないように) */
+        const sb=document.createElement("div");sb.className="phaseSummaryBar";
+        sb.style.left=barLeftPx+"px";
+        sb.style.width=barWidthPx+"px";
+        sb.style.background="transparent";
+        sb.title=`${g.phase}: ${dfmt(parse(minStart))}〜${dfmt(parse(maxEnd))} — ドラッグで配下タスクをまとめて日付移動`;
+        rp.appendChild(sb);
+        /* 見た目はこの2本の線分だけで描く(文字の背後は完全に空けて、フェード時も不自然にならないようにする) */
+        const sbSeg1=document.createElement("div");sbSeg1.className="phaseSummarySeg";
+        sbSeg1.style.left=barLeftPx+"px";sbSeg1.style.width=seg1W+"px";
+        rp.appendChild(sbSeg1);
+        const sbSeg2=document.createElement("div");sbSeg2.className="phaseSummarySeg arrow";
+        sbSeg2.style.left=seg2Left+"px";sbSeg2.style.width=seg2W+"px";
+        rp.appendChild(sbSeg2);
+        if(zoom!=="fit"){
+          sb.addEventListener("mousedown",ev=>{
+            ev.preventDefault();ev.stopPropagation(); /* rp自体のフェイズ並び替えドラッグと競合しないようにする */
+            const x0=ev.clientX,y0=ev.clientY;
+            const members=g.tasks.map(gt=>{
+              const reg=_barReg[gt.id];
+              return reg?{t:gt,r:reg.r,bar:reg.bar,s0:dayIdx(reg.r,gt.start),e0:dayIdx(reg.r,gt.end)}:null;
+            }).filter(Boolean);
+            if(!members.length)return;
+            let moved=false,handedOff=false;
+            const gEl=$("#gantt");
+            gEl.classList.add("dragBars");
+            lockCursor("grabbing");
+            sb.classList.add("activeDrag");
+            sbSeg1.classList.add("activeDrag");sbSeg2.classList.add("activeDrag");
+            const memberGhosts=members.map(mmb=>{mmb.bar.classList.add("activeDrag");return makeBarGhost(mmb.bar);});
+            /* フェイズの集計バー自体も、元の位置に薄いゴーストを残す。
+               文字の隙間は本物のバーだけの都合なので、ゴースト側は隙間を空けず1本の連続した線にする */
+            let sbGhost=null,stGhost=null;
+            try{
+              sbGhost=document.createElement("div");sbGhost.className="phaseSummarySeg arrow dragGhostPhase";
+              sbGhost.style.left=barLeftPx+"px";sbGhost.style.width=barWidthPx+"px";
+              rp.insertBefore(sbGhost,sb);
+              stGhost=document.createElement("div");stGhost.className="phaseSummaryStart dragGhostPhase";
+              stGhost.style.left=barLeftPx+"px";
+              rp.insertBefore(stGhost,st);
+            }catch(err){sbGhost=null;stGhost=null;}
+            const sbLeft0=ms*dayW;
+            const cleanup=()=>{
+              document.removeEventListener("mousemove",mm);
+              document.removeEventListener("mouseup",mu);
+              unlockCursor();
+              gEl.classList.remove("dragBars");
+              sb.classList.remove("activeDrag");
+              sbSeg1.classList.remove("activeDrag");sbSeg2.classList.remove("activeDrag");
+              members.forEach(mmb=>mmb.bar.classList.remove("activeDrag"));
+              memberGhosts.forEach(gh=>{if(gh)gh.remove();});
+              if(sbGhost)sbGhost.remove();
+              if(stGhost)stGhost.remove();
+            };
+            const mm=e=>{
+              const dyAbs=Math.abs(e.clientY-y0),dxAbs=Math.abs(e.clientX-x0);
+              if(dyAbs>10&&dyAbs>dxAbs){
+                /* 縦方向への意図がはっきりしたら、フェイズ自体の並び替えに切り替える(バー上でも上下できるように) */
+                handedOff=true;
+                cleanup();
+                startPhaseReorder(ev,g.phase);
+                return;
+              }
+              const dd=Math.round((e.clientX-x0)/(dayW*uiScale));
+              if(dd!==0)moved=true;
+              const shiftPx=dd*dayW;
+              sb.style.left=(sbLeft0+shiftPx)+"px";
+              sbSeg1.style.left=(barLeftPx+shiftPx)+"px";
+              sbSeg2.style.left=(seg2Left+shiftPx)+"px";
+              st.style.left=(barLeftPx+shiftPx)+"px";
+              sl.style.left=(labelLeft+shiftPx)+"px";
+              members.forEach(mmb=>{
+                const s=mmb.s0+dd,en=mmb.e0+dd;
+                mmb.bar.style.left=(s*dayW)+"px";
+                mmb.bar.dataset.s=s;mmb.bar.dataset.e=en;
+              });
+            };
+            const mu=()=>{
+              if(handedOff)return;
+              cleanup();
+              if(moved){
+                members.forEach(mmb=>{
+                  mmb.t.start=fmt(addD(mmb.r.start,+mmb.bar.dataset.s));
+                  mmb.t.end=fmt(addD(mmb.r.start,+mmb.bar.dataset.e));
+                });
+                scheduleSave();render();
+              }
+            };
+            document.addEventListener("mousemove",mm);
+            document.addEventListener("mouseup",mu);
+          });
+        }
+        /* 始点の縦線はバー本体のclip-pathに巻き込まれないよう別要素で描画する */
+        const st=document.createElement("div");st.className="phaseSummaryStart";
+        st.style.left=barLeftPx+"px";
+        rp.appendChild(st);
+        /* フェイズ名は左右の線分の間に、背景無しでそのまま置く(フェードしても不自然にならない) */
+        const sl=document.createElement("div");sl.className="phaseSummaryLabel";
+        sl.textContent=g.phase;
+        sl.style.left=labelLeft+"px";
+        rp.appendChild(sl);
+      }
+      pairHover(lp,rp);
+      /* タスク行はラッパーに入れ、開閉時はmax-heightをアニメーションさせる(再描画せず滑らかに) */
+      const lWrap=document.createElement("div");lWrap.className="taskGroupWrap";
+      const rWrap=document.createElement("div");rWrap.className="taskGroupWrap";
+      if(collapsed){lWrap.classList.add("collapsed");rWrap.classList.add("collapsed");lWrap.style.maxHeight="0px";rWrap.style.maxHeight="0px";}
+      lbody.appendChild(lWrap);rinner.appendChild(rWrap);
+      lTarget=lWrap;rTarget=rWrap;
+      const grp=phaseGroups[g.phase]={lp,rp,lWrap,rWrap,rows:[]};
+      /* フェイズ行はどこをホバーしても同じ挙動にする(＋ボタンでのタスク追加は引き続き機能する)。
+         配下のタスクも含めて丸ごと浮かせ、ドラッグすると一緒に動く範囲をホバーの時点で示唆する */
+      const phLiftOn=()=>{
+        lp.classList.add("blockLift");rp.classList.add("blockLift");
+        grp.rows.forEach(x=>{x.l.classList.add("blockLift");x.rr.classList.add("blockLift");});
+      };
+      const phLiftOff=()=>{
+        lp.classList.remove("blockLift");rp.classList.remove("blockLift");
+        grp.rows.forEach(x=>{x.l.classList.remove("blockLift");x.rr.classList.remove("blockLift");});
+      };
+      lp.addEventListener("mouseenter",phLiftOn);
+      lp.addEventListener("mouseleave",phLiftOff);
+      rp.addEventListener("mouseenter",phLiftOn);
+      rp.addEventListener("mouseleave",phLiftOff);
+      lp.querySelector(".phToggle").onclick=e=>{
+        e.stopPropagation();
+        if(e.shiftKey){
+          const willClose=!grp.lWrap.classList.contains("collapsed");
+          toggleAllPhases(willClose);
+        }else{
+          togglePhaseCollapse(g.phase,grp);
+        }
+      };
+      const setHovPhase=()=>{_hoverPhase=g.phase};
+      const clrHovPhase=()=>{if(_hoverPhase===g.phase)_hoverPhase=null};
+      lp.addEventListener("mouseenter",setHovPhase);rp.addEventListener("mouseenter",setHovPhase);
+      lp.addEventListener("mouseleave",clrHovPhase);rp.addEventListener("mouseleave",clrHovPhase);
+      lp.addEventListener("mouseenter",()=>setPhaseFocus(grp,true));
+      rp.addEventListener("mouseenter",()=>setPhaseFocus(grp,true));
+      lp.addEventListener("mouseleave",()=>setPhaseFocus(grp,false));
+      rp.addEventListener("mouseleave",()=>setPhaseFocus(grp,false));
+    }
+    for(const t of g.tasks)addTaskRow(t,r,tW,lTarget,rTarget,nDays,phaseGroups,dimPast);
+  }
+  /* フェイズ→タスクの階層線: 各グループの最後のタスクだけ縦線を行の中央で止める */
+  for(const p in phaseGroups){
+    const rows=phaseGroups[p].rows;
+    if(rows.length)rows[rows.length-1].l.classList.add("lastInPhase");
+  }
+  /* 末尾のゴースト追加行(全体表示モードでは非表示) */
+  if(zoom!=="fit"){
+    const lastPhase=groups.length?groups[groups.length-1].phase:"";
+    const lg=document.createElement("div");lg.className="lrow ghost";
+    lg.style.height="32px";lg.textContent="＋ タスクを追加";
+    lg.onclick=e=>{if(zoom!=="fit")quickTaskPopover(e.clientX,e.clientY,lastPhase);};
+    const rg=document.createElement("div");rg.className="rrow ghost";
+    rg.style.height="32px";
+    if(zoom!=="fit"){
+      rg.title="ダブルクリックでこの日付に「名称未設定」タスクを追加";
+      rg.addEventListener("dblclick",e=>{
+        const rc=rg.getBoundingClientRect();
+        const di=Math.min(Math.max(Math.floor((e.clientX-rc.left)/(dayW*uiScale)),0),nDays-1);
+        const s=fmt(addD(r.start,di));
+        const en=fmt(addD(r.start,Math.min(di+4,nDays-1)));
+        data.tasks.push({id:uid(),name:"名称未設定",memberIds:[],noAsg:false,catIds:[],phase:resolveTaskPhase(lastPhase),start:s,end:en,imp:1});
+        scheduleSave();render();
+      });
+    }
+    pairHover(lg,rg);
+    lbody.appendChild(lg);rinner.appendChild(rg);
+  }
+
+  /* ---- overlay (today line / event day line) ---- */
+  const ov=document.createElement("div");ov.id="overlay";
+  ov.style.width=tW+"px";
+  if(showToday&&ti>=0&&ti<nDays){
+    const v=document.createElement("div");v.className="vline today";
+    v.style.left=(ti*dayW+dayW/2)+"px";ov.appendChild(v);
+  }
+  rinner.appendChild(ov);
+  requestAnimationFrame(()=>{
+    const h=rinner.scrollHeight+"px";
+    ov.style.height=h;bg.style.height=h;hc.style.height=h;
+    if(evBand)evBand.style.height=h;
+    updateMonthLabels();
+    updateMonthLabelPositions();
+    updateTodayJump();
+    rebuildStickyCache();
+    updateStickyBlabels();
+  });
+}
+
+function addTaskRow(t,r,tW,lbody,rinner,nDays,phaseGroups,dimPast){
+  const mems=membersOf(t);
+  const m=mems[0];
+  const l=document.createElement("div");l.className="lrow"+(t.phase?"":" noPhase");
+  l.dataset.tid=t.id;
+  const noasg=!mems.length&&t.noAsg;
+  const avHtml=x=>`<span class="avs">${x.icon?`<img src="${x.icon}" alt="">`:`<span class="dot" style="background:${x.color}"></span>`}</span>`;
+  let asgInner="";
+  if(!noasg){
+    if(!mems.length){
+      asgInner=`<span class="avs"><span class="dot none"></span></span><span class="nm" style="color:var(--faint)">未定</span>`;
+    }else{
+      asgInner=`<span class="avstack">${mems.slice(0,3).map(avHtml).join("")}</span><span class="nm">${esc(m.name)}</span>`+
+        (mems.length>1?`<span class="more">+${mems.length-1}</span>`:"");
+    }
+  }
+  const cats=catsOf(t);
+  const catHtml=cats.slice(0,2).map(c=>`<span class="catTag" title="カテゴリ: ${esc(c.name)}"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")+
+    (cats.length>2?`<span class="catTag">+${cats.length-2}</span>`:"");
+  l.innerHTML=`<span class="grip" title="ドラッグで並び替え">⠿</span><span class="tnameWrap"><span class="tdot"></span><span class="taskName">${esc(t.name)}</span></span>`+
+    catHtml+
+    `<span class="asg">${asgInner}</span>`;
+  /* 行のどこを掴んでも良いようにする: 動かさず短く離せば編集、動かすか長押しすればそのままドラッグ(並び替え)開始。
+     グリップ(⠿)自体は従来通り即ドラッグの専用ハンドラを別途持つ */
+  l.addEventListener("mousedown",e=>{
+    if(zoom==="fit")return;
+    if(e.target.closest(".grip"))return;
+    if(e.shiftKey){
+      /* Shift+クリック: 並び替えは始めず、選択のトグルだけ行う */
+      e.preventDefault();e.stopPropagation();
+      if(selectedTaskIds.has(t.id)){
+        selectedTaskIds.delete(t.id);bar.classList.remove("selected");l.classList.remove("selected");
+      }else{
+        selectedTaskIds.add(t.id);bar.classList.add("selected");l.classList.add("selected");
+      }
+      return;
+    }
+    const sx=e.clientX,sy=e.clientY;
+    let started=false;
+    const cleanup=()=>{
+      clearTimeout(timer);
+      document.removeEventListener("mousemove",onMove);
+      document.removeEventListener("mouseup",onUp);
+    };
+    const startDrag=()=>{
+      if(started)return;
+      started=true;cleanup();startReorder(e,t);
+    };
+    const onMove=me=>{
+      if(Math.abs(me.clientX-sx)>4||Math.abs(me.clientY-sy)>4)startDrag();
+    };
+    const onUp=()=>{
+      cleanup();
+      if(!started)openTaskModal(t); /* 動かさないまま離した=短いクリックとして編集を開く */
+    };
+    const timer=setTimeout(startDrag,350); /* 動かさなくても長押しすればドラッグ開始 */
+    document.addEventListener("mousemove",onMove);
+    document.addEventListener("mouseup",onUp);
+  });
+  const gripEl=l.querySelector(".grip");
+  gripEl.addEventListener("mousedown",e=>{
+    if(zoom==="fit")return;
+    if(e.shiftKey){
+      /* Shift+グリップ: 並び替えは始めず、バーと同じく選択のトグルだけ行う。
+         バーは画面外にあることも多いので、左側の行自体にも選択表示を出す */
+      e.preventDefault();e.stopPropagation();
+      if(selectedTaskIds.has(t.id)){
+        selectedTaskIds.delete(t.id);bar.classList.remove("selected");l.classList.remove("selected");
+      }else{
+        selectedTaskIds.add(t.id);bar.classList.add("selected");l.classList.add("selected");
+      }
+      return;
+    }
+    e.preventDefault();e.stopPropagation();startReorder(e,t);
+  });
+
+  const rr=document.createElement("div");rr.className="rrow";
+  rr.dataset.tid=t.id;
+  const gripLiftOn=()=>{l.classList.add("blockLift");rr.classList.add("blockLift");};
+  const gripLiftOff=()=>{l.classList.remove("blockLift");rr.classList.remove("blockLift");};
+  gripEl.addEventListener("mouseenter",gripLiftOn);
+  gripEl.addEventListener("mouseleave",gripLiftOff);
+  const s=dayIdx(r,t.start),e=dayIdx(r,t.end);
+  const bar=document.createElement("div");bar.className="bar";
+  const barW=Math.max((e-s+1)*dayW,4);
+  bar.style.left=(s*dayW)+"px";
+  bar.style.width=barW+"px";
+  bar.style.background=m?m.color:(noasg?"var(--text)":"#A6ACB5");
+  if(noasg)bar.style.color="var(--bg)";
+  const imp=t.imp||1;
+  if(imp===3){bar.style.background="var(--imp)";bar.style.color="#fff";bar.classList.add("impB");}
+  else if(imp===2){bar.style.background="var(--imp2)";bar.style.color="#332800";bar.classList.add("impB");}
+  const days=e-s+1;
+  const dateRangeStr=s===e?dfmt(parse(t.start)):`${dfmt(parse(t.start))}〜${dfmt(parse(t.end))}`;
+  bar.title=`${esc(t.name)}${cats.length?` [${cats.map(c=>esc(c.name)).join("/")}]`:""}${mems.length?`  担当: ${mems.map(x=>esc(x.name)).join("・")}`:""}  ${dateRangeStr}`;
+  const barH=(DENS[data?.ui?.density]||DENS.m).bar;
+  const avMems=mems.slice(0,3);
+  const hasav=avMems.length>0&&barW>=barH+16;
+  const wide=(e-s+1)*dayW>50; /* 標準ズームが46→20px/日に変わったため、しきい値もそれに合わせて下げてある */
+  const ti=dayIdx(r,fmt(today()));
+  const dayChipTxt=`${days}日間`;
+  const dtxt=`${dateRangeStr}(${days}日)`;
+  const catNames=cats.map(c=>c.name).join("/");
+  /* バーが短いときは名前(+カテゴリ)をバー外に表示してはみ出しでも読めるように(従来通り・フリップあり) */
+  const outHtml=(wide?"":`<b class="on">${esc(t.name)}</b>`+(cats.length?`<span class="ocat">[${esc(catNames)}]</span>`:""))+dtxt;
+  const outW=(wide?0:tw(t.name,'600 10.5px '+FS)+6+(cats.length?tw("["+catNames+"]",'9.5px '+FS)+5:0))+tw(dtxt,'10px '+FS)+12;
+  const flip=(s*dayW+barW+outW>tW)&&(s*dayW>outW);
+  /* 広いバーは、ドラッグ時だけでなく普段から左端に開始日・右端に終了日を薄く常時表示する */
+  const edgeDates=wide
+    ?`<span class="edgeDate l">${dfmt(parse(t.start))}</span><span class="edgeDate r">${dfmt(parse(t.end))} <span class="dayChip">${dayChipTxt}</span></span>`
+    :"";
+  /* カテゴリは「+N」に畳まず、複数あれば1つずつチップとして並べて表示する */
+  const bcat=(wide&&cats.length)?cats.map(c=>`<span class="bcat"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join(""):"";
+  const avImgs=hasav?`<span class="bavstack">${avMems.map(x=>x.icon?`<img src="${x.icon}" alt="">`:`<span class="cdot" style="background:${x.color}"></span>`).join("")}</span>`:"";
+  /* アイコン・名前・カテゴリは1つのsticky塊としてまとめ、横スクロール時も一緒に左端へ追従させる */
+  const blabel=`<span class="blabel">${avImgs}${wide?`<span class="lbl">${esc(t.name)}</span>`:""}${bcat}</span>`;
+  bar.innerHTML=`<div class="h l"></div>${blabel}<div class="h r"></div>`+
+    (wide?edgeDates:`<span class="out${flip?" flip":""}">${outHtml}</span>`);
+  if(dimPast){
+    const pastEndIdx=Math.min(e,ti-1);
+    if(pastEndIdx>=s){
+      const pastW=Math.min((pastEndIdx-s+1)*dayW,barW);
+      const pv=document.createElement("div");pv.className="barPastVeil";
+      pv.style.width=pastW+"px";
+      if(pastW>=barW)pv.style.borderRadius="5px";
+      bar.appendChild(pv);
+    }
+  }
+  _barReg[t.id]={bar,t,r};
+  if(selectedTaskIds.has(t.id))bar.classList.add("selected");
+  if(zoom!=="fit")attachDrag(bar,t,r,l);
+  rr.appendChild(bar);
+  if(zoom!=="fit"){
+    rr.title="バーのない場所をダブルクリックでこの日付に「名称未設定」タスクを追加(上半分なら上に、下半分なら下に挿入)";
+    rr.addEventListener("dblclick",ev=>{
+      if(ev.target.closest(".bar"))return; /* バー上でのダブルクリックは無視 */
+      const rc=rr.getBoundingClientRect();
+      const di=Math.min(Math.max(Math.floor((ev.clientX-rc.left)/(dayW*uiScale)),0),nDays-1);
+      const ns=fmt(addD(r.start,di));
+      const ne=fmt(addD(r.start,Math.min(di+4,nDays-1)));
+      const i=data.tasks.indexOf(t);
+      const upperHalf=ev.clientY<rc.top+rc.height/2; /* 行の上半分でダブルクリックしたら上に、下半分なら下に追加する */
+      data.tasks.splice(upperHalf?i:i+1,0,{id:uid(),name:"名称未設定",memberIds:[],noAsg:false,catIds:[],phase:resolveTaskPhase(t.phase||""),start:ns,end:ne,imp:1});
+      scheduleSave();render();
+    });
+  }
+
+  pairHover(l,rr);
+  const setHov=()=>{_hoverTid=t.id};
+  const clrHov=()=>{if(_hoverTid===t.id)_hoverTid=null};
+  l.addEventListener("mouseenter",setHov);rr.addEventListener("mouseenter",setHov);
+  l.addEventListener("mouseleave",clrHov);rr.addEventListener("mouseleave",clrHov);
+
+  /* このタスクが属するフェイズのグループに自分を登録しておく(フェイズ→タスクの階層線描画で使う) */
+  const grp=t.phase&&phaseGroups?phaseGroups[t.phase]:null;
+  if(grp)grp.rows.push({l,rr});
+
+  lbody.appendChild(l);rinner.appendChild(rr);
+}
+
+/* ---------- hover date column ---------- */
+$("#rpane").addEventListener("mousemove",e=>{
+  if(!_rs)return;
+  const hc=$("#hoverCol"),hd=$("#hoverDate");
+  if(!hc||!hd)return;
+  const ri=$("#rinner").getBoundingClientRect();
+  const x=(e.clientX-ri.left)/uiScale;
+  if(x<0||x>=_rs.tW){hc.style.display="none";hd.style.display="none";return;}
+  const di=Math.min(Math.max(Math.floor(x/_rs.dayW),0),_rs.nDays-1);
+  hc.style.left=(di*_rs.dayW)+"px";
+  hc.style.width=_rs.dayW+"px";
+  hc.style.display="block";
+  const d=addD(_rs.r.start,di);
+  hd.textContent=`${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`;
+  hd.style.left=(di*_rs.dayW+_rs.dayW/2)+"px";
+  hd.style.display="block";
+});
+$("#rpane").addEventListener("mouseleave",()=>{
+  const hc=$("#hoverCol"),hd=$("#hoverDate");
+  if(hc)hc.style.display="none";
+  if(hd)hd.style.display="none";
+});
+
+/* ---------- 空いている場所をドラッグして矩形(マーキー)選択 ---------- */
+$("#rpane").addEventListener("mousedown",ev=>{
+  if(zoom==="fit")return;
+  if(ev.target.closest(".bar,.dia,.msband,.rrow.phase,.h"))return; /* バーなど既存要素の上では発動しない */
+  if(ev.button!==0)return;
+  ev.preventDefault(); /* これが無いと、ドラッグ中にブラウザ標準のテキスト選択も一緒に発生してしまう */
+  document.body.classList.add("marqueeActive");
+  const x0=ev.clientX,y0=ev.clientY;
+  let moved=false;
+  const box=document.createElement("div");box.id="marqueeBox";
+  document.body.appendChild(box);
+  const updateBox=(x1,y1)=>{
+    const left=Math.min(x0,x1),top=Math.min(y0,y1);
+    box.style.left=left+"px";box.style.top=top+"px";
+    box.style.width=Math.abs(x1-x0)+"px";box.style.height=Math.abs(y1-y0)+"px";
+  };
+  updateBox(x0,y0);
+  const mm=e=>{
+    if(Math.abs(e.clientX-x0)>3||Math.abs(e.clientY-y0)>3)moved=true;
+    if(moved){box.style.display="block";updateBox(e.clientX,e.clientY);}
+  };
+  const mu=e=>{
+    document.removeEventListener("mousemove",mm);
+    document.removeEventListener("mouseup",mu);
+    box.remove();
+    document.body.classList.remove("marqueeActive");
+    if(!moved)return;
+    const left=Math.min(x0,e.clientX),right=Math.max(x0,e.clientX);
+    const top=Math.min(y0,e.clientY),bottom=Math.max(y0,e.clientY);
+    if(!ev.shiftKey)clearSelection();
+    document.querySelectorAll("#rinner .bar").forEach(barEl=>{
+      const br=barEl.getBoundingClientRect();
+      if(br.left<right&&br.right>left&&br.top<bottom&&br.bottom>top){
+        const rrEl=barEl.closest(".rrow[data-tid]");
+        if(rrEl){
+          selectedTaskIds.add(rrEl.dataset.tid);
+          barEl.classList.add("selected");
+          const lEl=$("#lbody").querySelector(`.lrow[data-tid="${rrEl.dataset.tid}"]`);
+          if(lEl)lEl.classList.add("selected");
+        }
+      }
+    });
+    document.querySelectorAll("#rinner .dia,#rinner .msband").forEach(msEl=>{
+      const br=msEl.getBoundingClientRect();
+      if(br.left<right&&br.right>left&&br.top<bottom&&br.bottom>top&&msEl.dataset.mid){
+        selectedMsIds.add(msEl.dataset.mid);
+        msEl.classList.add("selected");
+      }
+    });
+    document.querySelectorAll("#rinner .rrow.phase").forEach(rpEl=>{
+      const br=rpEl.getBoundingClientRect();
+      if(br.left<right&&br.right>left&&br.top<bottom&&br.bottom>top){
+        const ph=rpEl.dataset.phase||"";
+        selectedPhases.add(ph);
+        rpEl.classList.add("selected");
+        const lpEl=$("#lbody").querySelector(`.lrow.phase[data-phase="${ph}"]`);
+        if(lpEl)lpEl.classList.add("selected");
+      }
+    });
+    _marqueeJustSelected=true;
+  };
+  document.addEventListener("mousemove",mm);
+  document.addEventListener("mouseup",mu);
+});
+
+/* ---------- horizontal drag (bars) ---------- */
+function clearSelection(){
+  if(!selectedTaskIds.size&&!selectedMsIds.size&&!selectedPhases.size)return;
+  selectedTaskIds.clear();
+  selectedMsIds.clear();
+  selectedPhases.clear();
+  document.querySelectorAll(".bar.selected,.lrow[data-tid].selected,.dia.selected,.msband.selected,.lrow.phase.selected,.rrow.phase.selected").forEach(el=>el.classList.remove("selected"));
+}
+/* 移動ドラッグ中、元の位置に残す薄いグレーのゴースト(タスクバー・フェイズ集計バーどちらのドラッグからも使う)。
+   top/heightはインラインではなくCSS側で決まっているため、computedStyleから実際の値を取る。
+   万一失敗してもドラッグ全体が止まらないようtry/catchで保護する(dragBarsクラスが消えなくなるのを防ぐ) */
+function makeBarGhost(srcBar){
+  try{
+    const cs=getComputedStyle(srcBar);
+    const gh=document.createElement("div");
+    gh.className="bar dragGhost";
+    gh.style.left=srcBar.style.left||cs.left;
+    gh.style.width=srcBar.style.width||cs.width;
+    gh.style.top=cs.top;
+    gh.style.height=cs.height;
+    srcBar.parentNode.insertBefore(gh,srcBar);
+    return gh;
+  }catch(err){
+    return null;
+  }
+}
+function attachDrag(bar,t,r,l){
+  bar.addEventListener("mousedown",ev=>{
+    ev.preventDefault();
+    const onHandle=ev.target.classList.contains("h");
+    const mode=onHandle?(ev.target.classList.contains("l")?"l":"r"):"move";
+
+    /* Shift+クリック: ドラッグは始めず、選択のトグルだけ行う */
+    if(ev.shiftKey&&!onHandle){
+      ev.stopPropagation();
+      if(selectedTaskIds.has(t.id)){
+        selectedTaskIds.delete(t.id);bar.classList.remove("selected");if(l)l.classList.remove("selected");
+      }else{
+        selectedTaskIds.add(t.id);bar.classList.add("selected");if(l)l.classList.add("selected");
+      }
+      return;
+    }
+    /* 選択済み(2件以上)のバーを掴んだ場合は、選択されている全タスクをまとめて動かすグループドラッグにする。
+       それ以外(Shiftなしの通常クリック)は選択状態にせず、これまで通りの単体ドラッグにする */
+    const groupMode=mode==="move"&&selectedTaskIds.has(t.id)&&selectedTaskIds.size>1;
+    if(!groupMode)clearSelection();
+
+    const dup=ev.altKey&&mode==="move"&&!groupMode; /* Alt(Option)+ドラッグ = 複製(単一選択のときのみ) */
+    const x0=ev.clientX,y0=ev.clientY;
+    const s0=dayIdx(r,t.start),e0=dayIdx(r,t.end);
+    let moved=false;
+    let target=bar;
+    const g=$("#gantt");
+    g.classList.add("dragBars");
+    lockCursor(dup?"copy":mode==="move"?"grabbing":"ew-resize");
+    /* 縦方向にも一定距離ドラッグしたら、並び替え(前後関係の変更)にも対応する(複製ドラッグ以外は単体/グループどちらも対象) */
+    const canReorder=mode==="move"&&!dup;
+    let vertActive=false,slot=null,slotPhase=null,vItems=null,vV=null,vEls=null,vDragEls=null,vInd=null;
+    if(canReorder){
+      const lbody=$("#lbody");
+      vEls=[...lbody.querySelectorAll(".lrow.phase,.lrow[data-tid]")];
+      vItems=vEls.map(el=>el.dataset.tid
+        ?{type:"task",t:data.tasks.find(x=>x.id===el.dataset.tid),el}
+        :{type:"head",phase:el.dataset.phase||"",el});
+      vV=vItems.filter(i=>i.type==="task").map(i=>i.t);
+      const vIds=groupMode?[...selectedTaskIds]:[t.id];
+      vDragEls=vIds.map(id=>vEls.find(el=>el.dataset.tid===id)).filter(Boolean);
+    }
+    if(dup){
+      target=bar.cloneNode(true);
+      target.style.opacity=".75";
+      target.style.cursor="copy";
+      bar.parentNode.appendChild(target);
+      bar.classList.add("activeDrag");
+    }
+    target.classList.add("activeDrag");
+    /* 移動ドラッグ中は、元の位置が分かるよう薄いグレーのゴーストを残しておく(複製ドラッグはbar自身が残るので不要) */
+    let ghost=null,groupGhosts=[];
+    if(!dup&&mode==="move"){
+      ghost=makeBarGhost(bar);
+    }
+    /* グループドラッグの場合、自分以外の選択中タスクも同時に動かすための情報を集めておく */
+    const group=groupMode
+      ?[...selectedTaskIds].map(id=>_barReg[id]).filter(x=>x&&x.t!==t).map(x=>({
+          bar:x.bar,t:x.t,r:x.r,s0:dayIdx(x.r,x.t.start),e0:dayIdx(x.r,x.t.end)
+        }))
+      :[];
+    if(groupMode)group.forEach(x=>{x.bar.classList.add("activeDrag");groupGhosts.push(makeBarGhost(x.bar));});
+    /* ドラッグ中だけ、バーの左右外側に開始日・終了日を表示してわかりやすくする */
+    const sLbl=document.createElement("div");sLbl.className="dragEdgeLbl tb s";
+    const eLbl=document.createElement("div");eLbl.className="dragEdgeLbl tb";
+    target.parentNode.appendChild(sLbl);
+    target.parentNode.appendChild(eLbl);
+    const updateEdgeLbls=(s,en)=>{
+      const leftPx=s*dayW,widthPx=Math.max((en-s+1)*dayW,4);
+      sLbl.textContent=dfmt(addD(r.start,s));
+      sLbl.style.left=(leftPx-6)+"px";
+      const dDays=en-s+1;
+      eLbl.innerHTML=`${dfmt(addD(r.start,en))} <span class="dayChip">${dDays}日間${group.length?` 他${group.length}件`:""}</span>`;
+      eLbl.style.left=(leftPx+widthPx+6)+"px";
+    };
+    updateEdgeLbls(s0,e0);
+    const mm=e=>{
+      let dd=Math.round((e.clientX-x0)/(dayW*uiScale));
+      if(dd!==0)moved=true;
+      if(canReorder){
+        const dyAbs=Math.abs(e.clientY-y0);
+        if(dyAbs>10){
+          if(!vertActive){
+            vertActive=true;moved=true;
+            vInd=document.createElement("div");vInd.className="dropInd";
+            $("#gantt").appendChild(vInd);
+            $("#gantt").classList.add("dragRows");
+            vDragEls.forEach(el=>{
+              el.classList.add("activeDrag");
+              const pr=pairOf(el);if(pr)pr.classList.add("activeDrag");
+            });
+          }
+          const gpane=$("#rpane"),gr=gpane.getBoundingClientRect();
+          if(e.clientY<gr.top+56)gpane.scrollTop-=10;
+          else if(e.clientY>gr.bottom-40)gpane.scrollTop+=10;
+          const y=e.clientY;
+          let curPhase="",cnt=0,done=false,indY=null;
+          for(const it of vItems){
+            const rc=it.el.getBoundingClientRect();
+            const mid=rc.top+rc.height/2;
+            if(it.type==="head"){
+              if(y<mid){slot=cnt;slotPhase=curPhase;indY=ganttTop(it.el);done=true;break;}
+              curPhase=it.phase;
+              if(y<rc.bottom){slot=cnt;slotPhase=it.phase;indY=ganttTop(it.el,"bottom");done=true;break;}
+            }else{
+              if(y<mid){slot=cnt;slotPhase=curPhase;indY=ganttTop(it.el);done=true;break;}
+              cnt++;
+            }
+          }
+          if(!done){slot=cnt;slotPhase=curPhase;indY=ganttTop(vEls[vEls.length-1],"bottom");}
+          vInd.style.top=(indY-1)+"px";
+          vInd.style.display="block";
+        }else if(vertActive){
+          vertActive=false;
+          if(vInd)vInd.style.display="none";
+        }
+      }
+      if(groupMode){
+        /* 単体ドラッグと同じく、画面外(カレンダーの端の先)へもそのまま動かせるようにする(クランプしない) */
+        const s=s0+dd,en=e0+dd;
+        target.style.left=(s*dayW)+"px";
+        target.dataset.s=s;target.dataset.e=en;
+        updateEdgeLbls(s,en);
+        group.forEach(x=>{
+          const gs=x.s0+dd,ge=x.e0+dd;
+          x.bar.style.left=(gs*dayW)+"px";
+          x.bar.dataset.s=gs;x.bar.dataset.e=ge;
+        });
+        return;
+      }
+      let s=s0,en=e0;
+      if(mode==="move"){s=s0+dd;en=e0+dd;}
+      else if(mode==="l"){s=Math.min(s0+dd,e0);}
+      else{en=Math.max(e0+dd,s0);}
+      target.style.left=(s*dayW)+"px";
+      target.style.width=Math.max((en-s+1)*dayW,4)+"px";
+      target.dataset.s=s;target.dataset.e=en;
+      updateEdgeLbls(s,en);
+    };
+    const mu=()=>{
+      document.removeEventListener("mousemove",mm);
+      document.removeEventListener("mouseup",mu);
+      unlockCursor();
+      sLbl.remove();eLbl.remove();
+      g.classList.remove("dragBars");
+      bar.classList.remove("activeDrag");
+      if(ghost)ghost.remove();
+      groupGhosts.forEach(gh=>{if(gh)gh.remove();});
+      if(vertActive){
+        vInd.remove();
+        $("#gantt").classList.remove("dragRows");
+        vDragEls.forEach(el=>{
+          el.classList.remove("activeDrag");
+          const pr=pairOf(el);if(pr)pr.classList.remove("activeDrag");
+        });
+      }
+      if(groupMode){
+        group.forEach(x=>x.bar.classList.remove("activeDrag"));
+        if(moved){
+          t.start=fmt(addD(r.start,+bar.dataset.s));
+          t.end=fmt(addD(r.start,+bar.dataset.e));
+          group.forEach(x=>{
+            x.t.start=fmt(addD(x.r.start,+x.bar.dataset.s));
+            x.t.end=fmt(addD(x.r.start,+x.bar.dataset.e));
+          });
+          if(vertActive&&slot!=null){
+            /* 選択中の全タスクを、元の相対順序を保ったまま並び替え先へまとめて挿入する */
+            const selSet=new Set(selectedTaskIds);
+            const selInOrder=vV.filter(x=>selSet.has(x.id));
+            const arr=vV.filter(x=>!selSet.has(x.id));
+            let removedBefore=0;
+            for(let i=0;i<slot;i++){if(selSet.has(vV[i].id))removedBefore++;}
+            const ins=slot-removedBefore;
+            arr.splice(ins,0,...selInOrder);
+            selInOrder.forEach(x=>{x.phase=slotPhase;});
+            data.tasks=arr;
+          }
+          scheduleSave();render();
+        }
+        return;
+      }
+      if(dup){
+        target.remove();
+        if(moved){
+          const i=data.tasks.indexOf(t);
+          const c=cloneTask(t);
+          c.start=fmt(addD(r.start,+target.dataset.s));
+          c.end=fmt(addD(r.start,+target.dataset.e));
+          data.tasks.splice(i+1,0,c);
+          scheduleSave();render();
+        }
+        return;
+      }
+      if(moved){
+        t.start=fmt(addD(r.start,+bar.dataset.s));
+        t.end=fmt(addD(r.start,+bar.dataset.e));
+        if(vertActive&&slot!=null){
+          const from=vV.indexOf(t);
+          const arr=vV.filter(x=>x!==t);
+          let ins=slot;if(from<slot)ins--;
+          t.phase=slotPhase;
+          arr.splice(ins,0,t);
+          data.tasks=arr;
+        }
+        scheduleSave();render();
+      }else{
+        openTaskModal(t);
+      }
+    };
+    document.addEventListener("mousemove",mm);
+    document.addEventListener("mouseup",mu);
+  });
+}
+
+/* ---------- vertical reorder (tasks) ---------- */
+function pairOf(el){
+  const rid=el.dataset.tid?`[data-tid="${el.dataset.tid}"]`:null;
+  return rid?$("#rinner .rrow"+rid):null;
+}
+function pairOfPhase(lp){
+  const lps=[...$("#lbody").querySelectorAll(".lrow.phase")];
+  const rps=[...$("#rinner").querySelectorAll(".rrow.phase")];
+  return rps[lps.indexOf(lp)]||null;
+}
+function ganttTop(el,edge){ /* #gantt基準のY座標 */
+  const gr=$("#gantt").getBoundingClientRect();
+  const rc=el.getBoundingClientRect();
+  return (edge==="bottom"?rc.bottom:rc.top)-gr.top;
+}
+function startReorder(ev,task){
+  /* 複数選択中(2件以上)にそのうちの1つを掴んだ場合は、選択中の全タスクをまとめて並び替える */
+  const groupMode=selectedTaskIds.has(task.id)&&selectedTaskIds.size>1;
+  const dup=ev.altKey&&!groupMode; /* Alt(Option)+ドラッグ = ドロップ位置に複製(単体のときのみ) */
+  const lbody=$("#lbody");
+  const els=[...lbody.querySelectorAll(".lrow.phase,.lrow[data-tid]")];
+  const items=els.map(el=>el.dataset.tid
+    ?{type:"task",t:data.tasks.find(x=>x.id===el.dataset.tid),el}
+    :{type:"head",phase:el.dataset.phase||"",el});
+  const V=items.filter(i=>i.type==="task").map(i=>i.t);
+  const dragEls=(groupMode?[...selectedTaskIds]:[task.id]).map(id=>els.find(el=>el.dataset.tid===id)).filter(Boolean);
+  $("#gantt").classList.add("dragRows");
+  dragEls.forEach(el=>{
+    el.classList.add("activeDrag");
+    const pr=pairOf(el);if(pr)pr.classList.add("activeDrag");
+  });
+  const ind=document.createElement("div");ind.className="dropInd";
+  $("#gantt").appendChild(ind);
+  lockCursor(dup?"copy":"grabbing");
+  let slot=null,slotPhase=null;
+
+  const mm=e=>{
+    const g=$("#rpane"),gr=g.getBoundingClientRect();
+    if(e.clientY<gr.top+56)g.scrollTop-=10;
+    else if(e.clientY>gr.bottom-40)g.scrollTop+=10;
+    const y=e.clientY;
+    let curPhase="",cnt=0,done=false,indY=null;
+    for(const it of items){
+      const rc=it.el.getBoundingClientRect();
+      const mid=rc.top+rc.height/2;
+      if(it.type==="head"){
+        if(y<mid){slot=cnt;slotPhase=curPhase;indY=ganttTop(it.el);done=true;break;}
+        curPhase=it.phase;
+        if(y<rc.bottom){slot=cnt;slotPhase=it.phase;indY=ganttTop(it.el,"bottom");done=true;break;}
+      }else{
+        if(y<mid){slot=cnt;slotPhase=curPhase;indY=ganttTop(it.el);done=true;break;}
+        cnt++;
+      }
+    }
+    if(!done){
+      slot=cnt;slotPhase=curPhase;
+      indY=ganttTop(els[els.length-1],"bottom");
+    }
+    ind.style.top=(indY-1)+"px";
+    ind.style.display="block";
+  };
+  const mu=()=>{
+    document.removeEventListener("mousemove",mm);
+    document.removeEventListener("mouseup",mu);
+    ind.remove();
+    unlockCursor();
+    $("#gantt").classList.remove("dragRows");
+    dragEls.forEach(el=>{
+      el.classList.remove("activeDrag");
+      const pr=pairOf(el);if(pr)pr.classList.remove("activeDrag");
+    });
+    if(slot==null)return;
+    if(groupMode){
+      /* 選択中の全タスクを、元の相対順序を保ったまままとめてslot位置へ挿入する */
+      const selSet=new Set(selectedTaskIds);
+      const selInOrder=V.filter(x=>selSet.has(x.id));
+      const arr=V.filter(x=>!selSet.has(x.id));
+      let removedBefore=0;
+      for(let i=0;i<slot;i++){if(selSet.has(V[i].id))removedBefore++;}
+      const ins=slot-removedBefore;
+      arr.splice(ins,0,...selInOrder);
+      selInOrder.forEach(x=>{x.phase=slotPhase;});
+      data.tasks=arr;
+    }else if(dup){
+      const arr=[...V];
+      const c=cloneTask(task);c.phase=slotPhase;
+      arr.splice(slot,0,c);
+      data.tasks=arr;
+    }else{
+      const from=V.indexOf(task);
+      const arr=V.filter(t=>t!==task);
+      let ins=slot;if(from<slot)ins--;
+      task.phase=slotPhase;
+      arr.splice(ins,0,task);
+      data.tasks=arr;
+    }
+    scheduleSave();render();
+  };
+  document.addEventListener("mousemove",mm);
+  document.addEventListener("mouseup",mu);
+}
+
+/* ---------- vertical reorder (phases) ---------- */
+function startPhaseReorder(ev,phase){
+  const lbody=$("#lbody");
+  const heads=[...lbody.querySelectorAll(".lrow.phase")];
+  const dragEl=heads.find(el=>(el.dataset.phase||"")===phase);
+  $("#gantt").classList.add("dragRows");
+  const actives=[dragEl];
+  const rp=pairOfPhase(dragEl);if(rp)actives.push(rp);
+  for(const t of data.tasks.filter(x=>(x.phase||"")===phase)){
+    const le=lbody.querySelector(`.lrow[data-tid="${t.id}"]`);
+    if(le){actives.push(le);const pr=pairOf(le);if(pr)actives.push(pr);}
+  }
+  actives.forEach(el=>el.classList.add("activeDrag"));
+  const ind=document.createElement("div");ind.className="dropInd";
+  $("#gantt").appendChild(ind);
+  lockCursor("grabbing");
+  let to=null;
+
+  const mm=e=>{
+    const g=$("#rpane"),gr=g.getBoundingClientRect();
+    if(e.clientY<gr.top+56)g.scrollTop-=10;
+    else if(e.clientY>gr.bottom-40)g.scrollTop+=10;
+    const y=e.clientY;
+    let k=heads.length;
+    for(let i=0;i<heads.length;i++){
+      const rc=heads[i].getBoundingClientRect();
+      if(y<rc.top+rc.height/2){k=i;break;}
+    }
+    to=k;
+    let indY;
+    if(k<heads.length)indY=ganttTop(heads[k]);
+    else indY=ganttTop(lbody.lastElementChild,"bottom");
+    ind.style.top=(indY-1)+"px";
+    ind.style.display="block";
+  };
+  const mu=()=>{
+    document.removeEventListener("mousemove",mm);
+    document.removeEventListener("mouseup",mu);
+    ind.remove();
+    unlockCursor();
+    $("#gantt").classList.remove("dragRows");
+    actives.forEach(el=>el.classList.remove("activeDrag"));
+    if(to==null)return;
+    const from=data.phases.indexOf(phase);
+    const arr=data.phases.filter(p=>p!==phase);
+    let ins=to;if(from<to)ins--;
+    arr.splice(ins,0,phase);
+    data.phases=arr;
+    scheduleSave();render();
+  };
+  document.addEventListener("mousemove",mm);
+  document.addEventListener("mouseup",mu);
+}
+
+/* ---------- column resizers ---------- */
+function setupColResizers(){
+  const gv=n=>parseInt(getComputedStyle(document.documentElement).getPropertyValue(n));
+  $("#resMain").title="ドラッグで列全体の幅を変更 / ダブルクリックで自動幅に戻す";
+  $("#resAsg").title="ドラッグで担当列の幅を変更 / ダブルクリックで自動幅に戻す";
+  $("#resMain").addEventListener("dblclick",()=>{
+    if(data.ui){delete data.ui.leftW;delete data.ui.asgW;}
+    scheduleSave();render();
+  });
+  $("#resAsg").addEventListener("dblclick",()=>{
+    if(data.ui){delete data.ui.leftW;}
+    scheduleSave();render();
+  });
+  $("#resMain").addEventListener("mousedown",e=>{
+    e.preventDefault();
+    const x0=e.clientX,lw0=gv("--leftW"),aw0=gv("--asgW");
+    lockCursor("col-resize");
+    const mm=ev=>{
+      /* タスク名の幅は変えず、担当列の幅(=左ペイン全体もその分)を変える */
+      const delta=(ev.clientX-x0)/uiScale;
+      const lw=Math.min(Math.max(lw0+delta,200),560);
+      const aw=Math.min(Math.max(aw0+delta,44),200);
+      document.documentElement.style.setProperty("--leftW",lw+"px");
+      document.documentElement.style.setProperty("--asgW",aw+"px");
+    };
+    const mu=()=>{
+      document.removeEventListener("mousemove",mm);
+      document.removeEventListener("mouseup",mu);
+      unlockCursor();
+      data.ui={...(data.ui||{}),leftW:gv("--leftW"),asgW:gv("--asgW")};
+      scheduleSave();render();
+    };
+    document.addEventListener("mousemove",mm);
+    document.addEventListener("mouseup",mu);
+  });
+  $("#resAsg").addEventListener("mousedown",e=>{
+    e.preventDefault();
+    const x0=e.clientX,lw0=gv("--leftW");
+    lockCursor("col-resize");
+    const mm=ev=>{
+      /* 担当列の幅は固定のまま、タスク名側の幅(=左ペイン全体)だけを変える */
+      const lw=Math.min(Math.max(lw0+(ev.clientX-x0)/uiScale,200),560);
+      document.documentElement.style.setProperty("--leftW",lw+"px");
+    };
+    const mu=()=>{
+      document.removeEventListener("mousemove",mm);
+      document.removeEventListener("mouseup",mu);
+      unlockCursor();
+      data.ui={...(data.ui||{}),leftW:gv("--leftW")};
+      scheduleSave();render();
+    };
+    document.addEventListener("mousemove",mm);
+    document.addEventListener("mouseup",mu);
+  });
+}
+
+/* ---------- text export ---------- */
+function buildText(md){
+  const h1=s=>md?`# ${s}`:`■ ${s}`;
+  const h2=s=>md?`## ${s}`:`【${s}】`;
+  const bullet=md?"-":"・";
+  const lines=[];
+  lines.push(h1(data.projectName||"(無題のプロジェクト)"));
+  const allDates=[...data.tasks.map(t=>t.start),...data.tasks.map(t=>t.end),...data.milestones.map(m=>m.date)].sort();
+  const metaLine=[];
+  if(allDates.length)metaLine.push(`期間: ${dfmtW(parse(allDates[0]))} 〜 ${dfmtW(parse(allDates[allDates.length-1]))}`);
+  if(data.eventDate)metaLine.push(`本番日: ${dfmtW(parse(data.eventDate))}${data.eventEndDate?`〜${dfmtW(parse(data.eventEndDate))}`:""}`);
+  if(metaLine.length)lines.push(metaLine.join("　|　"));
+  lines.push(`出力日時: ${nowStamp()}`);
+  if(data.milestones.length){
+    lines.push("",h2("マイルストーン"));
+    for(const m of [...data.milestones].sort((a,b)=>a.date<b.date?-1:1)){
+      const dateStr=`${dfmtW(parse(m.date))}${m.end?`〜${dfmtW(parse(m.end))}`:""}`;
+      lines.push(`◆ ${md?`\`${dateStr}\``:dateStr} ${m.name}`);
+    }
+  }
+  for(const g of groupsOf()){
+    if(!g.tasks.length)continue;
+    lines.push("",h2(g.phase||"未分類"));
+    for(const t of g.tasks){
+      const mems=membersOf(t),cats=catsOf(t);
+      const dateRange=`${dfmtW(parse(t.start))}〜${dfmtW(parse(t.end))}`;
+      lines.push(`${bullet} ${md?`\`${dateRange}\``:dateRange} ${t.name}${cats.length?` [${cats.map(c=>c.name).join("/")}]`:""}${mems.length?` (${mems.map(x=>x.name).join("・")})`:""}`);
+    }
+  }
+  return lines.join("\n");
+}
+function dfmtW(d){return `${d.getMonth()+1}月${d.getDate()}日(${WD[d.getDay()]})`;}
+function esc2(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function openTextModal(){
+  let md=true;
+  openModal(`
+    <h2>テキスト出力</h2>
+    <div class="seg" id="txtFmtSeg" style="margin-bottom:8px;display:inline-flex">
+      <button class="on" data-md="1">Markdown(Discord向け)</button><button data-md="0">プレーンテキスト</button>
+    </div>
+    <textarea id="txtOut" readonly>${esc2(buildText(md))}</textarea>
+    <div class="mFoot">
+      <span id="copied" style="color:var(--muted);font-size:11px;align-self:center"></span>
+      <div class="spacer"></div>
+      <button class="btn" id="tClose">閉じる</button>
+      <button class="btn primary" id="tCopy">コピー</button>
+    </div>
+  `,true);
+  document.querySelectorAll("#txtFmtSeg button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#txtFmtSeg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    md=b.dataset.md==="1";
+    $("#txtOut").value=buildText(md);
+    $("#copied").textContent="";
+  });
+  $("#tClose").onclick=closeModal;
+  $("#tCopy").onclick=async()=>{
+    const ta=$("#txtOut");
+    try{await navigator.clipboard.writeText(ta.value);}
+    catch(e){ta.select();document.execCommand("copy");}
+    $("#copied").textContent="コピーしました";
+  };
+}
+
+/* ---------- popover ---------- */
+let _popCleanup=null;
+function openPopover(x,y,html){
+  closePopover();
+  const p=$("#popover");
+  p.innerHTML=html;p.hidden=false;
+  p.style.left=x+"px";p.style.top=y+"px";
+  requestAnimationFrame(()=>{
+    const px=Math.min(Math.max(x,8),window.innerWidth-p.offsetWidth-8);
+    const py=Math.min(Math.max(y,8),window.innerHeight-p.offsetHeight-8);
+    p.style.left=px+"px";p.style.top=py+"px";
+  });
+  const onDoc=e=>{if(!p.contains(e.target))closePopover();};
+  setTimeout(()=>document.addEventListener("mousedown",onDoc),0);
+  _popCleanup=()=>document.removeEventListener("mousedown",onDoc);
+}
+function closePopover(){
+  const p=$("#popover");
+  p.hidden=true;p.innerHTML="";
+  if(_popCleanup){_popCleanup();_popCleanup=null;}
+}
+
+/* クリック位置の近くでタスクを素早く追加(連続入力可) */
+function quickTaskPopover(x,y,phase){
+  const s=fmt(today());
+  const e0=fmt(addD(today(),4));
+  openPopover(x,y,`
+    <h3>タスクを追加${phase?` — ${esc(phase)}`:""}</h3>
+    <div class="field"><input id="qName" placeholder="タスク名"></div>
+    <div class="mRow">
+      <div class="field"><input type="date" id="qStart" value="${s}"></div>
+      <div class="field"><input type="date" id="qEnd" value="${e0}"></div>
+    </div>
+    <div class="field"><select id="qMem"><option value="">担当: 未定</option><option value="__none">担当なし</option>${data.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></div>
+    <div class="mFoot" style="margin-top:2px">
+      <span id="qDone" style="font-size:10.5px;color:var(--muted);align-self:center"></span>
+      <div class="spacer"></div>
+      <button class="btn" id="qClose">閉じる</button>
+      <button class="btn primary" id="qAdd">追加</button>
+    </div>
+    <div class="hint">Enterで追加。続けて入力できます</div>
+  `);
+  const add=()=>{
+    const name=$("#qName").value.trim();
+    let s1=$("#qStart").value,e1=$("#qEnd").value;
+    if(!name||!s1||!e1)return;
+    if(parse(e1)<parse(s1))[s1,e1]=[e1,s1];
+    const mv=$("#qMem").value;
+    data.tasks.push({id:uid(),name,memberIds:mv&&mv!=="__none"?[mv]:[],noAsg:mv==="__none",catIds:[],phase:resolveTaskPhase(phase),start:s1,end:e1});
+    scheduleSave();render();
+    $("#qName").value="";$("#qName").focus();
+    $("#qDone").textContent=`「${name}」を追加しました`;
+  };
+  $("#qAdd").onclick=add;
+  $("#qClose").onclick=closePopover;
+  $("#qName").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)add()});
+  $("#qName").focus();
+}
+
+/* クリック位置の近くでマイルストーンを素早く追加 */
+function quickMsPopover(x,y,date){
+  const d=date||fmt(today());
+  openPopover(x,y,`
+    <h3>マイルストーンを追加</h3>
+    <div class="field"><input id="qmName" placeholder="名称(例: 告知解禁 / チケット販売)"></div>
+    <div class="mRow">
+      <div class="field"><input type="date" id="qmDate" value="${d}" title="期日(期間の場合は開始日)"></div>
+      <div class="field"><input type="date" id="qmEnd" value="" title="終了日(任意・期間にする場合)"></div>
+    </div>
+    <div class="mFoot" style="margin-top:2px">
+      <div class="spacer"></div>
+      <button class="btn" id="qmClose">閉じる</button>
+      <button class="btn primary" id="qmAdd">追加</button>
+    </div>
+  `);
+  $("#qmEnd").addEventListener("focus",()=>{
+    if(!$("#qmEnd").value)$("#qmEnd").value=fmt(addD(parse($("#qmDate").value),1));
+  });
+  const add=()=>{
+    const name=$("#qmName").value.trim();
+    let dt=$("#qmDate").value,en=$("#qmEnd").value;
+    if(!name||!dt)return;
+    if(en&&parse(en)<parse(dt))[dt,en]=[en,dt];
+    const nm={id:uid(),name,date:dt};
+    if(en)nm.end=en;
+    data.milestones.push(nm);
+    data.milestones.sort((a,b)=>a.date<b.date?-1:1);
+    scheduleSave();render();
+    closePopover();
+  };
+  $("#qmAdd").onclick=add;
+  $("#qmClose").onclick=closePopover;
+  $("#qmName").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)add()});
+  $("#qmName").focus();
+}
+
+/* ---------- modals ---------- */
+function openModal(html,wide){
+  const b=$("#modalBody");
+  b.className="modal"+(wide?" wide":"");
+  b.innerHTML=html;
+  $("#modalBg").classList.add("show");
+}
+function closeModal(){$("#modalBg").classList.remove("show")}
+$("#modalBg").addEventListener("click",e=>{if(e.target.id==="modalBg")closeModal()});
+
+function openPhaseModal(p){
+  const isNew=p==null;
+  openModal(`
+    <h2>${isNew?"フェイズを追加":"フェイズを編集"}</h2>
+    <div class="field"><label>フェイズ名(企画・制作などの大項目)</label><input id="pName" value="${esc(p||"")}" placeholder="例: 制作"></div>
+    <div class="mFoot">
+      ${isNew?"":`<button class="btn danger" id="pDel">削除</button>`}
+      <div class="spacer"></div>
+      <button class="btn" id="pCancel">キャンセル</button>
+      <button class="btn primary" id="pSave">${isNew?"追加":"保存"}</button>
+    </div>
+    ${isNew?"":`<div style="font-size:11px;color:var(--muted);margin-top:10px">削除してもタスクは消えません(未分類として先頭に移動します)</div>`}
+  `);
+  $("#pCancel").onclick=closeModal;
+  $("#pSave").onclick=()=>{
+    const name=$("#pName").value.trim();if(!name)return;
+    if(isNew){
+      if(!data.phases.includes(name))data.phases.push(name);
+    }else if(name!==p){
+      const i=data.phases.indexOf(p);
+      if(data.phases.includes(name))data.phases.splice(i,1);
+      else data.phases[i]=name;
+      data.tasks.forEach(t=>{if((t.phase||"")===p)t.phase=name});
+    }
+    scheduleSave();closeModal();render();
+  };
+  if(!isNew)$("#pDel").onclick=()=>{
+    data.phases=data.phases.filter(x=>x!==p);
+    data.tasks.forEach(t=>{if((t.phase||"")===p)t.phase=""});
+    scheduleSave();closeModal();render();
+  };
+  $("#pName").focus();
+}
+
+function openTaskModal(t){
+  const isNew=!t;
+  const d=t||{
+    name:"",memberIds:[],catIds:[],noAsg:false,phase:"",imp:1,
+    start:fmt(today()),
+    end:fmt(addD(today(),4))
+  };
+  openModal(`
+    <h2>${isNew?"タスクを追加":"タスクを編集"}</h2>
+    <div class="field" style="margin-bottom:16px">
+      <div class="bar" id="fPreviewBar" style="position:static;width:100%;pointer-events:none;--barH:${DENS.l.bar}px"></div>
+    </div>
+    <div class="field"><label>タスク名</label><input id="fName" value="${esc(d.name)}" placeholder="例: ワールド設計"></div>
+    <div class="field"><label>担当者</label>
+      <div class="chips" id="fMems"></div>
+      <div class="mRow" style="margin-top:7px;align-items:center">
+        <div class="mAv" id="fMemAvBtn" title="アイコン画像を設定(任意)">＋</div>
+        <div class="dot" id="fMemColorDot" title="色を選択"></div>
+        <div class="field" style="flex:1;margin-bottom:0"><input id="fMemNew" placeholder="新しいメンバーを追加(Enterで確定)"></div>
+      </div>
+      <div class="palRow" id="fMemPalRow" style="display:none"></div>
+      <label class="chk" style="margin-top:7px"><input type="checkbox" id="fNoAsg"><span>担当なし</span></label>
+    </div>
+    <div class="field"><label>カテゴリ</label>
+      <div class="chips" id="fCats" style="margin-bottom:7px"></div>
+      <input id="fCatNew" placeholder="新しいカテゴリを追加(Enterで確定)">
+    </div>
+    <div class="mRow">
+      <div class="field"><label>開始日</label><input type="date" id="fStart" value="${d.start}"></div>
+      <div class="field"><label>終了日</label><input type="date" id="fEnd" value="${d.end}"></div>
+    </div>
+    <div class="field"><label>重要度</label>
+      <div class="seg" id="fImpSeg">
+        <button type="button" data-imp="1" class="${(d.imp||1)===1?"on":""}" title="通常">1</button>
+        <button type="button" data-imp="2" class="impBtn2 ${d.imp===2?"on":""}" title="やや重要(バーが黄色になります)">2</button>
+        <button type="button" data-imp="3" class="impBtn3 ${d.imp===3?"on":""}" title="重要(バーが赤になります)">3</button>
+      </div>
+    </div>
+    <div class="mFoot">
+      ${isNew?"":`<button class="btn danger" id="fDel">削除</button><button class="btn" id="fDup">複製</button>`}
+      <div class="spacer"></div>
+      <button class="btn" id="fCancel">キャンセル</button>
+      <button class="btn primary" id="fSave">${isNew?"登録":"保存"}</button>
+    </div>
+  `);
+  let fImp=d.imp||1;
+  /* モーダル上部のサンプルバー: 実際のガントバーと同じ配色・アイコン・カテゴリタグをその場で反映する(期限はモーダル内に表現できる場所が無いため対象外) */
+  function updatePreviewBar(){
+    const pv=$("#fPreviewBar");
+    if(!pv)return;
+    const name=$("#fName").value.trim()||"(名称未設定)";
+    const mems=[...selM].map(id=>member(id)).filter(Boolean);
+    const noAsgOn=$("#fNoAsg").checked;
+    const cats=[...selC].map(id=>data.cats.find(c=>c.id===id)).filter(Boolean);
+    const m=mems[0];
+    pv.classList.remove("impB");
+    pv.style.background=m?m.color:(noAsgOn?"var(--text)":"#A6ACB5");
+    pv.style.color=noAsgOn?"var(--bg)":"#fff";
+    if(fImp===3){pv.style.background="var(--imp)";pv.style.color="#fff";pv.classList.add("impB");}
+    else if(fImp===2){pv.style.background="var(--imp2)";pv.style.color="#332800";pv.classList.add("impB");}
+    const avMems=mems.slice(0,3);
+    const avImgs=avMems.length?`<span class="bavstack">${avMems.map(x=>x.icon?`<img src="${x.icon}" alt="">`:`<span class="cdot" style="background:${x.color}"></span>`).join("")}</span>`:"";
+    const bcat=cats.map(c=>`<span class="bcat"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("");
+    pv.innerHTML=`<span class="blabel">${avImgs}<span class="lbl">${esc(name)}</span>${bcat}</span>`;
+  }
+  document.querySelectorAll("#fImpSeg button").forEach(b=>b.onclick=()=>{
+    fImp=+b.dataset.imp;
+    document.querySelectorAll("#fImpSeg button").forEach(x=>x.classList.toggle("on",x===b));
+    updatePreviewBar();
+  });
+  $("#fCancel").onclick=closeModal;
+  if(!isNew)$("#fDup").onclick=()=>{closeModal();duplicateTask(t);};
+  $("#fName").addEventListener("input",updatePreviewBar);
+  /* 複数選択チップの状態管理 */
+  const selM=new Set(d.memberIds||[]);
+  const selC=new Set(d.catIds||[]);
+  $("#fNoAsg").checked=!!d.noAsg&&!selM.size;
+  const drawMemChips=()=>{
+    $("#fMems").innerHTML=data.members.length
+      ?data.members.map(m=>`<span class="chip${selM.has(m.id)?" on":""}" data-mid="${m.id}">${m.icon?`<img class="chipIcon" src="${m.icon}">`:`<span class="cdot" style="background:${m.color}"></span>`}${esc(m.name)}</span>`).join("")
+      :`<span style="font-size:11px;color:var(--faint)">まだメンバーが登録されていません。</span>`;
+    document.querySelectorAll("#fMems .chip").forEach(ch=>ch.onclick=()=>{
+      const id=ch.dataset.mid;
+      selM.has(id)?selM.delete(id):selM.add(id);
+      if(selM.size)$("#fNoAsg").checked=false;
+      drawMemChips();
+    });
+    updatePreviewBar();
+  };
+  const drawCatChips=()=>{
+    $("#fCats").innerHTML=data.cats.length
+      ?data.cats.map(c=>`<span class="chip${selC.has(c.id)?" on":""}" data-cid="${c.id}"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join("")
+      :`<span style="font-size:11px;color:var(--faint)">まだカテゴリが登録されていません。</span>`;
+    document.querySelectorAll("#fCats .chip").forEach(ch=>ch.onclick=()=>{
+      const id=ch.dataset.cid;
+      selC.has(id)?selC.delete(id):selC.add(id);
+      drawCatChips();
+    });
+    updatePreviewBar();
+  };
+  drawMemChips();drawCatChips();
+  $("#fNoAsg").addEventListener("change",()=>{
+    if($("#fNoAsg").checked){selM.clear();drawMemChips();}
+    updatePreviewBar();
+  });
+  const addCat=()=>{
+    const n=$("#fCatNew").value.trim();if(!n)return;
+    selC.add(ensureCat(n));
+    $("#fCatNew").value="";
+    drawCatChips();
+    $("#fCatNew").focus();
+  };
+  $("#fCatNew").addEventListener("keydown",e=>{
+    if(e.key!=="Enter"||e.isComposing)return;
+    e.preventDefault();
+    addCat();
+  });
+  let fMemIcon=null;
+  let fMemColor=PALETTE[data.members.length%PALETTE.length];
+  $("#fMemColorDot").style.background=fMemColor;
+  $("#fMemPalRow").innerHTML=PALETTE.map(c=>`<div class="sw${c===fMemColor?" on":""}" data-c="${c}" style="background:${c}"></div>`).join("")+
+    `<input type="color" id="fMemColorCustom" value="${fMemColor}" title="カスタム色"><span class="plbl">カスタム</span>`;
+  const setFMemColor=c=>{
+    fMemColor=c;
+    $("#fMemColorDot").style.background=c;
+    document.querySelectorAll("#fMemPalRow .sw").forEach(s=>s.classList.toggle("on",s.dataset.c===c));
+  };
+  $("#fMemColorDot").onclick=()=>{
+    const row=$("#fMemPalRow");
+    row.style.display=row.style.display==="none"?"flex":"none";
+  };
+  document.querySelectorAll("#fMemPalRow .sw").forEach(sw=>sw.onclick=()=>setFMemColor(sw.dataset.c));
+  $("#fMemColorCustom").addEventListener("input",()=>setFMemColor($("#fMemColorCustom").value));
+  $("#fMemAvBtn").onclick=()=>{
+    _avFileCallback=dataUrl=>{
+      fMemIcon=dataUrl;
+      $("#fMemAvBtn").innerHTML=`<img src="${dataUrl}">`;
+    };
+    $("#avFile").click();
+  };
+  const addMem=()=>{
+    const n=$("#fMemNew").value.trim();if(!n)return;
+    const mem={id:uid(),name:n,color:resolveMemberColor(n,fMemColor)};
+    if(fMemIcon)mem.icon=fMemIcon;
+    data.members.push(mem);
+    scheduleSave();
+    selM.add(mem.id);
+    $("#fNoAsg").checked=false;
+    $("#fMemNew").value="";
+    fMemIcon=null;
+    $("#fMemAvBtn").innerHTML="＋";
+    fMemColor=PALETTE[data.members.length%PALETTE.length];
+    $("#fMemColorDot").style.background=fMemColor;
+    $("#fMemPalRow").style.display="none";
+    drawMemChips();
+    $("#fMemNew").focus();
+  };
+  $("#fMemNew").addEventListener("keydown",e=>{
+    if(e.key!=="Enter"||e.isComposing)return;
+    e.preventDefault();
+    addMem();
+  });
+  $("#fSave").onclick=()=>{
+    const name=$("#fName").value.trim();
+    let s=$("#fStart").value,e=$("#fEnd").value;
+    if(!name||!s||!e)return;
+    if(parse(e)<parse(s))[s,e]=[e,s];
+    const imp=fImp;
+    const memberIds=[...selM];
+    const noAsg=!memberIds.length&&$("#fNoAsg").checked;
+    const catIds=[...selC];
+    if(isNew){
+      data.tasks.push({id:uid(),name,memberIds,noAsg,phase:resolveTaskPhase(""),start:s,end:e,imp,catIds});
+    }else{
+      Object.assign(t,{name,memberIds,noAsg,start:s,end:e,imp,catIds}); /* phaseは対象外(このモーダルでは変更しない。ドラッグで変更できる) */
+    }
+    scheduleSave();closeModal();render();
+  };
+  if(!isNew)$("#fDel").onclick=()=>{
+    data.tasks=data.tasks.filter(x=>x.id!==t.id);
+    scheduleSave();closeModal();render();
+  };
+  $("#fName").focus();
+}
+
+function openMsModal(m){
+  const isNew=!m;
+  const d=m||{name:"",date:fmt(today())};
+  openModal(`
+    <h2>${isNew?"マイルストーンを追加":"マイルストーンを編集"}</h2>
+    <div class="field"><label>名称</label><input id="mName" value="${esc(d.name)}" placeholder="例: 告知解禁 / チケット販売"></div>
+    <div class="mRow">
+      <div class="field"><label>期日(期間の場合は開始日)</label><input type="date" id="mDate" value="${d.date}"></div>
+      <div class="field"><label>終了日(任意・期間にする場合)</label><input type="date" id="mEnd" value="${d.end||""}" data-auto="1"></div>
+    </div>
+    <div class="field"><label>重要度</label>
+      <select id="mImp">
+        <option value="1" ${(d.imp||1)===1?"selected":""}>1 — 通常</option>
+        <option value="2" ${d.imp===2?"selected":""}>2 — 注意(黄色)</option>
+        <option value="3" ${d.imp===3?"selected":""}>3 — 重要(赤色)</option>
+      </select>
+    </div>
+    <div class="mFoot">
+      ${isNew?"":`<button class="btn danger" id="mDel">削除</button>`}
+      <div class="spacer"></div>
+      <button class="btn" id="mCancel">キャンセル</button>
+      <button class="btn primary" id="mSave">${isNew?"追加":"保存"}</button>
+    </div>
+  `);
+  $("#mCancel").onclick=closeModal;
+  $("#mEnd").addEventListener("focus",()=>{
+    if(!$("#mEnd").value)$("#mEnd").value=fmt(addD(parse($("#mDate").value),1));
+  });
+  $("#mEnd").addEventListener("input",()=>{$("#mEnd").dataset.auto="0";});
+  $("#mDate").addEventListener("change",()=>{
+    if($("#mEnd").dataset.auto==="1"&&$("#mEnd").value){
+      $("#mEnd").value=fmt(addD(parse($("#mDate").value),1));
+    }
+  });
+  $("#mSave").onclick=()=>{
+    const name=$("#mName").value.trim();
+    let date=$("#mDate").value,end=$("#mEnd").value;
+    if(!name||!date)return;
+    if(end&&parse(end)<parse(date))[date,end]=[end,date];
+    const imp=+$("#mImp").value;
+    if(isNew){
+      const nm={id:uid(),name,date};
+      if(end)nm.end=end;
+      if(imp>1)nm.imp=imp;
+      data.milestones.push(nm);
+    }else{
+      Object.assign(m,{name,date});
+      if(end)m.end=end;else delete m.end;
+      if(imp>1)m.imp=imp;else delete m.imp;
+    }
+    data.milestones.sort((a,b)=>a.date<b.date?-1:1);
+    scheduleSave();closeModal();render();
+  };
+  if(!isNew)$("#mDel").onclick=()=>{
+    data.milestones=data.milestones.filter(x=>x.id!==m.id);
+    scheduleSave();closeModal();render();
+  };
+  $("#mName").focus();
+}
+
+let _palOpen=null,_avIdx=null;
+function openMembersModal(){
+  const list=data.members.map((m,i)=>`
+    <div class="memItem">
+      <div class="mAv" data-av="${i}" title="クリックでアイコン画像を設定">${m.icon?`<img src="${m.icon}">`:"＋"}</div>
+      <div class="dot" style="background:${m.color}" data-i="${i}" title="クリックで色を選択"></div>
+      <span>${esc(m.name)}</span>
+      ${m.icon?`<button class="mini" data-rmav="${i}">画像削除</button>`:""}
+      <button data-del="${i}" title="メンバーを削除">✕</button>
+      ${_palOpen===i?`<div class="palRow">
+        ${PALETTE.map(c=>`<div class="sw${c===m.color?" on":""}" data-c="${c}" data-m="${i}" style="background:${c}" title="${c}"></div>`).join("")}
+        <input type="color" value="${m.color}" data-cc="${i}" title="カスタム色">
+        <span class="plbl">カスタム</span>
+      </div>`:""}
+    </div>`).join("");
+  openModal(`
+    <h2>メンバー</h2>
+    <div class="memList">${list||`<span style="color:var(--muted)">まだメンバーがいません</span>`}</div>
+    <div class="mRow">
+      <div class="field" style="flex:1;margin-bottom:0"><input id="memName" placeholder="名前を入力して追加"></div>
+      <button class="btn primary" id="memAdd">追加</button>
+    </div>
+    <div class="mFoot"><div class="spacer"></div><button class="btn" id="memClose">閉じる</button></div>
+  `);
+  $("#memClose").onclick=()=>{_palOpen=null;closeModal();render();};
+  $("#memAdd").onclick=()=>{
+    const n=$("#memName").value.trim();if(!n)return;
+    data.members.push({id:uid(),name:n,color:resolveMemberColor(n,PALETTE[data.members.length%PALETTE.length])});
+    scheduleSave();openMembersModal();
+  };
+  $("#memName").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)$("#memAdd").click()});
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    const m=data.members[+b.dataset.del];
+    data.tasks.forEach(t=>{t.memberIds=(t.memberIds||[]).filter(id=>id!==m.id)});
+    data.members.splice(+b.dataset.del,1);
+    _palOpen=null;
+    scheduleSave();openMembersModal();
+  });
+  document.querySelectorAll(".memItem .dot").forEach(d=>d.onclick=()=>{
+    const i=+d.dataset.i;
+    _palOpen=(_palOpen===i)?null:i;
+    openMembersModal();
+  });
+  document.querySelectorAll(".sw").forEach(s=>s.onclick=()=>{
+    data.members[+s.dataset.m].color=s.dataset.c;
+    scheduleSave();openMembersModal();
+  });
+  document.querySelectorAll("[data-cc]").forEach(c=>c.addEventListener("change",()=>{
+    data.members[+c.dataset.cc].color=c.value;
+    scheduleSave();openMembersModal();
+  }));
+  document.querySelectorAll("[data-av]").forEach(a=>a.onclick=()=>{
+    _avIdx=+a.dataset.av;
+    $("#avFile").click();
+  });
+  document.querySelectorAll("[data-rmav]").forEach(b=>b.onclick=()=>{
+    delete data.members[+b.dataset.rmav].icon;
+    scheduleSave();openMembersModal();
+  });
+}
+
+/* ---------- categories modal ---------- */
+let _catPal=null,_catRen=null;
+function openCatsModal(){
+  const list=data.cats.map((c,i)=>`
+    <div class="memItem">
+      <div class="dot" style="background:${c.color}" data-ci="${i}" title="クリックで色を選択"></div>
+      ${_catRen===i
+        ?`<input id="catRen" value="${esc(c.name)}" style="flex:1">`
+        :`<span data-crn="${i}" style="cursor:text" title="クリックで名前を変更">${esc(c.name)}</span>`}
+      <span style="flex:none;font-size:10px;color:var(--faint)">${data.tasks.filter(t=>(t.catIds||[]).includes(c.id)).length}件</span>
+      <button data-cdel="${i}" title="カテゴリを削除">✕</button>
+      ${_catPal===i?`<div class="palRow">
+        ${PALETTE.map(cc=>`<div class="sw${cc===c.color?" on":""}" data-c="${cc}" data-m="${i}" style="background:${cc}"></div>`).join("")}
+        <input type="color" value="${c.color}" data-cc="${i}" title="カスタム色">
+        <span class="plbl">カスタム</span>
+      </div>`:""}
+    </div>`).join("");
+  openModal(`
+    <h2>カテゴリ</h2>
+    <div class="memList">${list||`<span style="color:var(--muted)">まだカテゴリがありません(タスク編集で入力すると自動登録されます)</span>`}</div>
+    <div class="mRow">
+      <div class="field" style="flex:1;margin-bottom:0"><input id="catName" placeholder="例: 3DCG / Unity / PR"></div>
+      <button class="btn primary" id="catAdd">追加</button>
+    </div>
+    <div class="mFoot"><div class="spacer"></div><button class="btn" id="catClose">閉じる</button></div>
+  `);
+  $("#catClose").onclick=()=>{_catPal=null;_catRen=null;closeModal();render();};
+  $("#catAdd").onclick=()=>{
+    const n=$("#catName").value.trim();if(!n)return;
+    ensureCat(n);
+    scheduleSave();openCatsModal();
+  };
+  $("#catName").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)$("#catAdd").click()});
+  document.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>{
+    const c=data.cats[+b.dataset.cdel];
+    data.tasks.forEach(t=>{t.catIds=(t.catIds||[]).filter(id=>id!==c.id)});
+    data.cats.splice(+b.dataset.cdel,1);
+    _catPal=null;_catRen=null;
+    scheduleSave();openCatsModal();
+  });
+  document.querySelectorAll("[data-ci]").forEach(d=>d.onclick=()=>{
+    const i=+d.dataset.ci;
+    _catPal=(_catPal===i)?null:i;_catRen=null;
+    openCatsModal();
+  });
+  document.querySelectorAll(".sw[data-m]").forEach(sw=>sw.onclick=()=>{
+    data.cats[+sw.dataset.m].color=sw.dataset.c;
+    scheduleSave();openCatsModal();
+  });
+  document.querySelectorAll("[data-cc]").forEach(c=>c.addEventListener("change",()=>{
+    data.cats[+c.dataset.cc].color=c.value;
+    scheduleSave();openCatsModal();
+  }));
+  document.querySelectorAll("[data-crn]").forEach(sp=>sp.onclick=()=>{
+    _catRen=+sp.dataset.crn;_catPal=null;
+    openCatsModal();
+    const inp=$("#catRen");
+    if(inp){
+      inp.focus();inp.select();
+      const commit=()=>{
+        const n=inp.value.trim();
+        if(n)data.cats[_catRen].name=n;
+        _catRen=null;
+        scheduleSave();openCatsModal();
+      };
+      inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing)commit()});
+      inp.addEventListener("blur",commit);
+    }
+  });
+}
+
+/* タイトルバー(画像+大見出し+本番日カウントダウン)の表示更新 */
+function applyTitleBar(){
+  const has=!!data.headerImg;
+  $("#titleBar").classList.toggle("hasImg",has);
+  $("#hdrImg").src=has?data.headerImg:"";
+  $("#titleText").textContent=data.projectName||"プロジェクト名を設定";
+  document.title=data.projectName?`${data.projectName} - AA_GanttChartBoard`:"AA_GanttChartBoard";
+
+  const cd=$("#titleCountdown");
+  if(data.eventDate){
+    const start=parse(data.eventDate);
+    const end=data.eventEndDate?parse(data.eventEndDate):start;
+    const diff=Math.round((start-today())/DAY); /* 一番早い日時(開始日)までの日数 */
+    const dateLabel=data.eventEndDate
+      ?(start.getFullYear()===end.getFullYear()?`${ywd(start)}〜${dwd(end)}`:`${ywd(start)}〜${ywd(end)}`)
+      :ywd(start);
+    let statusLabel;
+    if(diff>0)statusLabel=`あと${diff}日`;
+    else if(diff===0)statusLabel="本番当日";
+    else if(today()<=end)statusLabel="開催中";
+    else statusLabel="本番終了";
+    cd.textContent=`${dateLabel}・${statusLabel}`;
+    cd.hidden=false;
+  }else{
+    cd.hidden=true;
+  }
+}
+$("#titleBtn").onclick=()=>openTitleModal();
+$("#titleCountdown").onclick=()=>openTitleModal();
+
+/* ヘッダー画像: 横長(21:6目安)に切り出し、幅1400pxまでに縮小して保存 */
+function readHeaderImageFile(f){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(f);
+    img.onload=()=>{
+      const targetRatio=21/6;
+      let sw=img.width,sh=img.height,sx=0,sy=0;
+      if(sw/sh>targetRatio){ sw=sh*targetRatio; sx=(img.width-sw)/2; }
+      else{ sh=sw/targetRatio; sy=(img.height-sh)/2; }
+      const outW=Math.min(1400,Math.round(sw));
+      const outH=Math.round(outW/targetRatio);
+      const c=document.createElement("canvas");c.width=outW;c.height=outH;
+      c.getContext("2d").drawImage(img,sx,sy,sw,sh,0,0,outW,outH);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg",0.86));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("画像を読み込めませんでした"));};
+    img.src=url;
+  });
+}
+
+function openTitleModal(isNew){
+  const hasImg=!!data.headerImg;
+  const defaultEventDate=(()=>{const d=new Date(today());d.setMonth(d.getMonth()+2);return fmt(d);})();
+  openModal(`
+    <h2>タイトル設定</h2>
+    <div class="field"><label>プロジェクト名</label><input id="tName" value="${esc(data.projectName||"")}" placeholder="例: バーチャルライブ制作"></div>
+    <div class="field"><label>ヘッダー画像(任意・横長推奨)</label>
+      <div id="tImgPrev" style="border:1px solid var(--line);border-radius:6px;overflow:hidden;height:90px;background:var(--hover);display:flex;align-items:center;justify-content:center;margin-bottom:8px">
+        ${hasImg?`<img src="${data.headerImg}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:11px;color:var(--faint)">画像未設定</span>`}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn solid" id="tImgPick" style="flex:1">画像を${hasImg?"変更":"選ぶ"}</button>
+        ${hasImg?`<button class="btn danger" id="tImgDel">画像を削除</button>`:""}
+      </div>
+    </div>
+    <div class="mRow">
+      <div class="field"><label>本番日(空欄で非表示)</label><input type="date" id="tEvS" value="${data.eventDate||(isNew?defaultEventDate:"")}"></div>
+      <div class="field"><label>終了日(任意・期間の場合)</label><input type="date" id="tEvE" value="${data.eventEndDate||""}"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin:-4px 0 4px">設定すると、ヘッダーに残り日数(開始日まで)が表示されます</div>
+    <div class="mFoot">
+      <div class="spacer"></div>
+      <button class="btn" id="tCancel">キャンセル</button>
+      <button class="btn primary" id="tSave">保存</button>
+    </div>
+  `);
+  $("#tCancel").onclick=closeModal;
+  $("#tImgPick").onclick=()=>$("#hdrFile").click();
+  $("#tEvS").addEventListener("focus",()=>{
+    if(!$("#tEvS").value)$("#tEvS").value=defaultEventDate;
+  });
+  $("#tEvE").addEventListener("focus",()=>{
+    const s=$("#tEvS").value;
+    if(!$("#tEvE").value&&s)$("#tEvE").value=fmt(addD(parse(s),1));
+  });
+  if(hasImg)$("#tImgDel").onclick=()=>{
+    delete data.headerImg;
+    scheduleSave();closeModal();applyTitleBar();
+  };
+  $("#tSave").onclick=()=>{
+    data.projectName=$("#tName").value.trim();
+    let evs=$("#tEvS").value,eve=$("#tEvE").value;
+    const hadEventDateBefore=!!data.eventDate;
+    if(evs){
+      if(eve&&parse(eve)<parse(evs))[evs,eve]=[eve,evs];
+      if(!hadEventDateBefore){
+        /* 本番日を初めて設定したタイミングで、「名称未設定」フェイズの下に
+           今日から5日間(重要度1)・本番日(重要度3)の名称未設定タスクを自動で作っておく */
+        if(!data.phases)data.phases=[];
+        if(!data.phases.includes("名称未設定"))data.phases.push("名称未設定");
+        data.tasks.push({id:uid(),name:"名称未設定",memberIds:[],noAsg:false,catIds:[],phase:"名称未設定",start:fmt(today()),end:fmt(addD(today(),4)),imp:1});
+        data.tasks.push({id:uid(),name:"名称未設定",memberIds:[],noAsg:false,catIds:[],phase:"名称未設定",start:evs,end:eve||evs,imp:3});
+      }
+      data.eventDate=evs;
+      if(eve)data.eventEndDate=eve;else delete data.eventEndDate;
+    }else{
+      delete data.eventDate;delete data.eventEndDate;
+    }
+    scheduleSave();closeModal();applyTitleBar();render();
+  };
+  $("#tName").focus();
+}
+$("#hdrFile").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";
+  if(!f)return;
+  try{
+    data.headerImg=await readHeaderImageFile(f);
+    scheduleSave();
+    if($("#modalBg").classList.contains("show"))openTitleModal();
+    else applyTitleBar();
+  }catch(err){alert(err.message);}
+};
+
+/* アイコン画像: 中央を正方形に切り出し64pxに縮小して保存(表示時に円形マスク) */
+let _avFileCallback=null; /* 新規メンバー作成時など、_avIdxを使わずコールバックで画像を受け取りたい場合に使う */
+$("#avFile").onchange=e=>{
+  const f=e.target.files[0];e.target.value="";
+  if(!f)return;
+  const img=new Image();
+  const url=URL.createObjectURL(f);
+  img.onload=()=>{
+    const s=Math.min(img.width,img.height);
+    const c=document.createElement("canvas");c.width=64;c.height=64;
+    c.getContext("2d").drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,64,64);
+    URL.revokeObjectURL(url);
+    const dataUrl=c.toDataURL("image/png");
+    if(_avFileCallback){const cb=_avFileCallback;_avFileCallback=null;cb(dataUrl);}
+    else if(_avIdx!=null){
+      data.members[_avIdx].icon=dataUrl;
+      _avIdx=null;
+      scheduleSave();openMembersModal();
+    }
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);alert("画像を読み込めませんでした");};
+  img.src=url;
+};
+
+/* ---------- export / import ---------- */
+$("#btnNew").onclick=()=>{
+  if(!confirm("現在の内容をすべて消去して、新規作成しますか?\n(誤って押しても Ctrl+Z で元に戻せます)"))return;
+  data={
+    projectName:"",headerImg:null,eventDate:"",eventEndDate:"",
+    members:[],cats:[],tasks:[],milestones:[],phases:[],
+    ui:data.ui /* テーマ・表示倍率・密度などの表示設定はそのまま引き継ぐ */
+  };
+  clearSelection();
+  scheduleSave();
+  applyTitleBar();
+  render();
+  openTitleModal(true); /* 新規作成直後は、まずタイトル設定から始められるようにする(本番日は2ヶ月後をあらかじめ入力しておく) */
+};
+$("#btnExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(data.projectName||"schedule")+".json";
+  a.click();
+};
+$("#btnImport").onclick=()=>$("#fileIn").click();
+$("#fileIn").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      data=JSON.parse(rd.result);
+      if(!data.phases){
+        data.phases=[];
+        for(const t of data.tasks){const p=t.phase||"";if(p&&!data.phases.includes(p))data.phases.push(p);}
+      }
+      if(!data.cats)data.cats=[];
+      for(const t of data.tasks){
+        if(t.cat){const cid=ensureCat(t.cat);t.catIds=t.catIds||[];if(cid&&!t.catIds.includes(cid))t.catIds.push(cid);}
+        delete t.cat;
+        if(t.catId){t.catIds=t.catIds||[];if(!t.catIds.includes(t.catId))t.catIds.push(t.catId);delete t.catId;}
+        if(!t.catIds)t.catIds=[];
+        if(t.memberId!==undefined){
+          if(t.memberId==="__none")t.noAsg=true;
+          else if(t.memberId)t.memberIds=[t.memberId];
+          delete t.memberId;
+        }
+        if(!t.memberIds)t.memberIds=[];
+        if(t.em){t.imp=3;delete t.em;}
+      }
+      for(const m of data.milestones){
+        if(m.em){m.imp=3;delete m.em;}
+      }
+      scheduleSave();render();
+    }
+    catch(err){alert("JSONの読み込みに失敗しました");}
+  };
+  rd.readAsText(f);
+  e.target.value="";
+};
+
+let _h2cLoading=null;
+function loadHtml2Canvas(){
+  if(window.html2canvas)return Promise.resolve();
+  if(_h2cLoading)return _h2cLoading;
+  _h2cLoading=new Promise((res,rej)=>{
+    const sc=document.createElement("script");
+    sc.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    sc.onload=()=>res();
+    sc.onerror=()=>rej(new Error("load failed"));
+    document.head.appendChild(sc);
+  });
+  return _h2cLoading;
+}
+$("#btnPng").onclick=async()=>{
+  const btn=$("#btnPng");
+  const prevLabel=btn.textContent;
+  btn.textContent="準備中…";btn.disabled=true;
+  const prevZoom=zoom;
+  try{
+    await loadHtml2Canvas();
+    zoom="fit";render();
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const gantt=$("#gantt");
+    gantt.classList.add("pngCap");
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const bgColor=getComputedStyle(document.body).getPropertyValue("--panel").trim()||"#ffffff";
+    const canvas=await window.html2canvas(gantt,{backgroundColor:bgColor,scale:4,useCORS:true});
+    gantt.classList.remove("pngCap");
+
+    /* 「いつ時点の・何のガントチャートか」が画像だけでも分かるよう、タイトル・本番日・出力日時のヘッダーを上に合成する */
+    const scale=4;
+    const headH=Math.round(58*scale);
+    const out=document.createElement("canvas");
+    out.width=canvas.width;
+    out.height=canvas.height+headH;
+    const ctx=out.getContext("2d");
+    ctx.fillStyle=bgColor;ctx.fillRect(0,0,out.width,out.height);
+    ctx.textBaseline="alphabetic";
+    ctx.fillStyle=getComputedStyle(document.body).getPropertyValue("--text").trim()||"#1A1D21";
+    ctx.font=`700 ${Math.round(19*scale)}px ${FS}`;
+    ctx.fillText(data.projectName||"(無題のプロジェクト)",16*scale,32*scale);
+    const subParts=[];
+    if(data.eventDate)subParts.push(`本番日: ${dfmtW(parse(data.eventDate))}${data.eventEndDate?`〜${dfmtW(parse(data.eventEndDate))}`:""}`);
+    subParts.push(`出力日時: ${nowStamp()}`);
+    ctx.font=`${Math.round(12*scale)}px ${FS}`;
+    ctx.fillStyle=getComputedStyle(document.body).getPropertyValue("--muted").trim()||"#666";
+    ctx.fillText(subParts.join("　|　"),16*scale,50*scale);
+    ctx.drawImage(canvas,0,headH);
+
+    const a=document.createElement("a");
+    a.href=out.toDataURL("image/png");
+    a.download=(data.projectName||"schedule")+".png";
+    a.click();
+  }catch(err){
+    alert("PNGの生成に失敗しました。ネットワーク接続をご確認ください。");
+  }finally{
+    $("#gantt").classList.remove("pngCap");
+    zoom=prevZoom;render(); /* 失敗時もズームを必ず元に戻す(ここが抜けるとドラッグ不可になる) */
+    btn.textContent=prevLabel;btn.disabled=false;
+  }
+};
+
+/* ---------- wire ---------- */
+$("#fabMain").onclick=()=>{$("#fab").classList.toggle("open");};
+$("#fabTask").onclick=()=>{$("#fab").classList.remove("open");openTaskModal(null);};
+$("#fabPhase").onclick=()=>{$("#fab").classList.remove("open");openPhaseModal(null);};
+$("#fabMs").onclick=()=>{$("#fab").classList.remove("open");openMsModal(null);};
+$("#exportMenuBtn").onclick=e=>{e.stopPropagation();$("#exportGroup").classList.toggle("open");};
+document.querySelectorAll("#exportMenuPanel .btn").forEach(b=>b.addEventListener("click",()=>{
+  $("#exportGroup").classList.remove("open");
+}));
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#fab"))$("#fab").classList.remove("open");
+  if(!e.target.closest("#exportGroup"))$("#exportGroup").classList.remove("open");
+  if(_marqueeJustSelected){_marqueeJustSelected=false;return;} /* マーキー選択直後のclickでは解除しない */
+  if(!e.target.closest(".bar,.grip,.dia,.msband,.lrow.phase,.rrow.phase,.lrow[data-tid]")&&(selectedTaskIds.size||selectedMsIds.size||selectedPhases.size))clearSelection();
+});
+$("#btnMembers").onclick=openMembersModal;
+$("#btnCats").onclick=openCatsModal;
+$("#btnText").onclick=openTextModal;
+/* 印刷/PDF: 1枚に無理に収めず、日付範囲でヨコ方向に複数ページへ自然分割する。
+   左側のタスク一覧は各ページで繰り返し表示し、どのページを見てもタスク名が分かるようにする */
+function buildPrintPages(){
+  const container=$("#printPages");
+  container.innerHTML="";
+  const lpane=$("#lpane"),rinner=$("#rinner");
+  const leftW=lpane.getBoundingClientRect().width;
+  const tW=_rs?_rs.tW:rinner.scrollWidth;
+  const fullH=rinner.scrollHeight;
+  const pxPerMm=96/25.4;
+  const pageWpx=(297-16)*pxPerMm,pageHpx=(210-16)*pxPerMm; /* A4横向き、余白8mm×2を差し引いた印刷可能領域 */
+  const winW=Math.max(pageWpx-leftW,120);
+  const numPages=Math.max(1,Math.ceil(tW/winW));
+  const cleanClone=el=>{
+    const c=el.cloneNode(true);
+    c.querySelectorAll(".grip,.rowAdd,#hoverCol,#hoverDate,.colRes").forEach(x=>x.remove());
+    return c;
+  };
+  const lheadC=cleanClone($("#lhead")),lbodyC=cleanClone($("#lbody"));
+  lbodyC.style.transform="none";
+  for(let i=0;i<numPages;i++){
+    const page=document.createElement("div");page.className="printPage";
+    const leftCol=document.createElement("div");leftCol.className="printPageLeft";
+    leftCol.style.width=leftW+"px";
+    leftCol.appendChild(i===0?lheadC:lheadC.cloneNode(true));
+    leftCol.appendChild(i===0?lbodyC:lbodyC.cloneNode(true));
+    page.appendChild(leftCol);
+    const win=document.createElement("div");win.className="printPageWin";
+    win.style.width=winW+"px";
+    win.style.height=fullH+"px";
+    const rinnerC=cleanClone(rinner);
+    rinnerC.style.position="relative";
+    rinnerC.style.left=(-i*winW)+"px";
+    win.appendChild(rinnerC);
+    page.appendChild(win);
+    container.appendChild(page);
+  }
+}
+$("#btnPrint").onclick=()=>{
+  const prev=zoom;
+  const prevUiZoom=document.documentElement.style.getPropertyValue("--uiZoom");
+  const rp=$("#rpane");rp.scrollTop=0;rp.scrollLeft=0;
+  $("#lbody").style.transform="";
+  /* #lpane/#rpaneにはCSSのzoom(表示倍率)が掛かっているが、印刷ページは複製先の別divに置くため
+     倍率が引き継がれず座標がズレる。印刷中だけ表示倍率を100%に固定して整合させる */
+  document.documentElement.style.setProperty("--uiZoom","1");
+  zoom="12";render(); /* 印刷は最小文字サイズを保ちつつ、なるべく多くの日数を1ページに収める縮小ズームを使う */
+  const gantt=$("#gantt");
+  gantt.classList.add("pngCap"); /* 全タスク行を省略なく展開してから計測・複製する */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    buildPrintPages();
+    setTimeout(()=>{
+      try{window.print();}finally{
+        $("#printPages").innerHTML="";
+        gantt.classList.remove("pngCap");
+        document.documentElement.style.setProperty("--uiZoom",prevUiZoom);
+        zoom=prev;render();
+      }
+    },80);
+  }));
+};
+const DENS={s:{row:34,bar:20,av:16,phase:24},m:{row:44,bar:26,av:20,phase:29},l:{row:54,bar:32,av:24,phase:34}};
+function applyDensity(){
+  const d=DENS[data?.ui?.density]?data.ui.density:"m";
+  const v=DENS[d];
+  const rt=document.documentElement.style;
+  rt.setProperty("--rowH",v.row+"px");
+  rt.setProperty("--barH",v.bar+"px");
+  rt.setProperty("--avL",v.av+"px");
+  document.querySelectorAll("#densSeg button").forEach(b=>b.classList.toggle("on",b.dataset.d===d));
+}
+document.querySelectorAll("#densSeg button").forEach(b=>b.onclick=()=>{
+  data.ui={...(data.ui||{}),density:b.dataset.d};
+  applyDensity();scheduleSave();render();
+});
+/* ガントチャート全体(メニューより下)の表示倍率。CSSのzoomで実際にレイアウトごと拡大縮小し、
+   マウス座標から日付を逆算する各所の計算にはuiScaleで補正を掛けて整合させている(上のuiScale変数と連動) */
+function applyUiScale(){
+  uiScale=data.ui?.uiScale||1;
+  document.documentElement.style.setProperty("--uiZoom",uiScale);
+  $("#scaleLabel").textContent=Math.round(uiScale*100)+"%";
+  $("#scaleDown").disabled=uiScale<=0.7;
+  $("#scaleUp").disabled=uiScale>=1.5;
+}
+function setUiScale(v){
+  const nv=Math.min(1.5,Math.max(0.7,Math.round(v*10)/10));
+  data.ui={...(data.ui||{}),uiScale:nv};
+  applyUiScale();scheduleSave();
+}
+$("#scaleDown").onclick=()=>setUiScale((data.ui?.uiScale||1)-0.1);
+$("#scaleUp").onclick=()=>setUiScale((data.ui?.uiScale||1)+0.1);
+$("#scaleReset").onclick=()=>setUiScale(1);
+
+function applyTheme(){
+  const dark=data?.ui?.theme==="dark";
+  /* 切り替えの瞬間だけ全体に滑らかなクロスフェードをかけ、他の操作の即応性には影響させない */
+  document.body.classList.add("themeSwitching");
+  document.body.classList.toggle("dark",dark);
+  $("#btnTheme").title=dark?"ライトモードに切り替え":"ダークモードに切り替え";
+  clearTimeout(applyTheme._t);
+  applyTheme._t=setTimeout(()=>{document.body.classList.remove("themeSwitching");},450);
+}
+$("#btnTheme").onclick=()=>{
+  data.ui={...(data.ui||{}),theme:data.ui?.theme==="dark"?"light":"dark"};
+  applyTheme();scheduleSave();
+};
+$("#todayChk").addEventListener("change",()=>{
+  data.ui={...(data.ui||{}),showToday:$("#todayChk").checked};
+  scheduleSave();render();
+});
+document.querySelectorAll("#zoomSeg button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#zoomSeg button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");zoom=b.dataset.z;render();
+  updateScaleStepperState();
+});
+function updateScaleStepperState(){
+  $("#scaleStepper").classList.toggle("disabled",zoom==="fit");
+}
+updateScaleStepperState();
+window.addEventListener("resize",()=>{if(zoom==="fit")render();updateTodayJump();});
+/* position:stickyがスクロールコンテナとの相性で効かないことがあるため、バー内のアイコン/タスク名・
+   月/年ラベルは、スクロールに合わせてJSで位置を計算して追従させる(read/writeを分離し、レイアウトを都度読まない) */
+let _stickyItems=null; /* render()のたびに再構築するキャッシュ。scroll中はこれを見るだけで、レイアウトを一切読まない */
+function rebuildStickyCache(){
+  _stickyItems=[];
+  document.querySelectorAll("#rinner .bar").forEach(bar=>{
+    const bl=bar.querySelector(".blabel");
+    if(bl)_stickyItems.push({el:bar,bl,blW:bl.offsetWidth,cur:null,inset:BLABEL_BASE_INSET*2});
+  });
+  /* 範囲マイルストーン(msband)の文字も、バーと同じ考え方でスクロールに追従させる(元は.mbwrapにposition:stickyを使っていたが、
+     zoomプロパティとの相性問題でバーと同じ不具合が起きるため、同じJS計算方式に統一する) */
+  document.querySelectorAll("#rinner .msband").forEach(band=>{
+    const bl=band.querySelector(".mbwrap");
+    if(bl)_stickyItems.push({el:band,bl,blW:bl.offsetWidth,cur:null,inset:MSBAND_BASE_INSET});
+  });
+}
+/* バーの左側の実際の余白(padding 8px + blabelのleft:6px = 14px)。ラベルはこの分だけ元々右に寄っているので、
+   右端の余白を計算する際にもこの基準値を差し引く必要がある(これを忘れると余白が実質ゼロになってしまう) */
+const BLABEL_BASE_INSET=14;
+/* msbandの左右余白(padding 8px x 2辺 = 16px)。mbwrapはbarのblabelと違い追加のleftオフセットを持たないため14ではなく16 */
+const MSBAND_BASE_INSET=16;
+function updateStickyBlabels(){
+  if(!_stickyItems)return false;
+  const scrollLeft=$("#rpane").scrollLeft;
+  let stillMoving=false;
+  _stickyItems.forEach(item=>{
+    const elLeft=parseFloat(item.el.style.left)||0;
+    const elWidth=parseFloat(item.el.style.width)||0;
+    let target=scrollLeft-elLeft;
+    if(target<0)target=0;
+    const maxOffset=Math.max(elWidth-item.blW-item.inset,0);
+    if(target>maxOffset)target=maxOffset;
+    if(item.cur===null)item.cur=target; /* 初回(新規描画直後)はいきなり合わせる */
+    const diff=target-item.cur;
+    if(Math.abs(diff)>0.4){
+      item.cur+=diff*0.55; /* マウスの動きに滑らかに追従させつつ、遅れすぎて気持ち悪くならない程度の減衰にする */
+      stillMoving=true;
+    }else{
+      item.cur=target;
+    }
+    const val=item.cur>0?`translateX(${item.cur}px)`:"";
+    if(item.bl.style.transform!==val)item.bl.style.transform=val;
+  });
+  return stillMoving;
+}
+function updateMonthLabelTargets(){
+  const s=$("#rpane").scrollLeft;
+  /* 今どの月が左端に来ているか(=追従中のラベル)を特定し、その月にだけ西暦を付与する。
+     元々西暦付き(先頭月・1月)はスクロールに関わらず常に表示。 */
+  let activeIdx=-1;
+  for(let i=0;i<_mlbls.length;i++){
+    const it=_mlbls[i];
+    if(s+2>=it.x0&&s+2<it.x1){activeIdx=i;break;}
+  }
+  for(let i=0;i<_mlbls.length;i++){
+    const it=_mlbls[i];
+    const showYear=it.origHasYear||i===activeIdx;
+    const text=showYear?`${it.y}年${it.mo}月`:`${it.mo}月`;
+    if(it.el.textContent!==text){
+      it.el.textContent=text;
+      it.w=it.el.offsetWidth; /* テキストが変わったとき(月境界をまたいだとき)だけ幅を測り直す */
+    }
+    if(it.w===undefined)it.w=it.el.offsetWidth;
+    it.target=Math.min(Math.max(it.x0,s+2),Math.max(it.x1-it.w-2,it.x0));
+    if(it.cur===undefined||it.cur===null)it.cur=it.target;
+  }
+}
+function updateMonthLabelPositions(){
+  let stillMoving=false;
+  for(let i=0;i<_mlbls.length;i++){
+    const it=_mlbls[i];
+    if(it.target===undefined)continue;
+    const diff=it.target-it.cur;
+    if(Math.abs(diff)>0.4){
+      it.cur+=diff*0.55;
+      stillMoving=true;
+    }else{
+      it.cur=it.target;
+    }
+    const val=it.cur+"px";
+    if(it.el.style.left!==val)it.el.style.left=val;
+  }
+  return stillMoving;
+}
+function updateMonthLabels(){ /* 外部からの呼び出し口(既存互換): 目標値の計算だけ行い、実際の描画はイージングループに任せる */
+  updateMonthLabelTargets();
+}
+let _stickyLoopActive=false;
+function stickyLoop(){
+  const movingBars=updateStickyBlabels();
+  const movingMonths=updateMonthLabelPositions();
+  if(movingBars||movingMonths)requestAnimationFrame(stickyLoop);
+  else _stickyLoopActive=false;
+}
+function scheduleStickyUpdate(){
+  if(_stickyLoopActive)return;
+  _stickyLoopActive=true;
+  requestAnimationFrame(stickyLoop);
+}
+$("#rpane").addEventListener("scroll",()=>{
+  const g=$("#rpane");
+  $("#lbody").style.transform=`translateY(${-g.scrollTop}px)`;
+  const gt=$("#gantt");
+  gt.classList.toggle("hscrolled",g.scrollLeft>2);
+  gt.classList.toggle("vscrolled",g.scrollTop>2);
+  updateMonthLabels();
+  updateTodayJump();
+  scheduleStickyUpdate();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    if(!$("#popover").hidden)closePopover();
+    else if($("#modalBg").classList.contains("show"))closeModal();
+    else if(selectedTaskIds.size)clearSelection();
+    return;
+  }
+  const tag=(e.target.tagName||"").toLowerCase();
+  const typing=["input","textarea","select"].includes(tag);
+  const modalOpen=$("#modalBg").classList.contains("show")||!$("#popover").hidden;
+  /* Delete / Backspace: ホバー中の要素を削除(Ctrl+Zで戻せる) */
+  if((e.key==="Delete"||e.key==="Backspace")&&!typing&&!modalOpen&&zoom!=="fit"){
+    if(selectedTaskIds.size||selectedMsIds.size||selectedPhases.size){
+      /* ドラッグ矩形やShift+クリックで複数選択中のタスク・マイルストーン・フェイズをまとめて削除する。
+         フェイズは(単体削除時と同じく)配下タスクは消さず未分類として残す */
+      e.preventDefault();
+      if(selectedTaskIds.size)data.tasks=data.tasks.filter(x=>!selectedTaskIds.has(x.id));
+      if(selectedMsIds.size)data.milestones=data.milestones.filter(x=>!selectedMsIds.has(x.id));
+      if(selectedPhases.size){
+        data.phases=(data.phases||[]).filter(p=>!selectedPhases.has(p));
+        data.tasks.forEach(t=>{if(selectedPhases.has(t.phase))t.phase="";});
+      }
+      clearSelection();
+      scheduleSave();render();
+      return;
+    }
+    if(_hoverMid){
+      e.preventDefault();
+      data.milestones=data.milestones.filter(x=>x.id!==_hoverMid);
+      _hoverMid=null;
+      scheduleSave();render();
+      return;
+    }
+    if(_hoverTid){
+      e.preventDefault();
+      data.tasks=data.tasks.filter(x=>x.id!==_hoverTid);
+      _hoverTid=null;
+      scheduleSave();render();
+      return;
+    }
+    if(_hoverPhase){
+      /* フェイズ「だけ」を削除する。配下タスクは削除せず、未分類(フェイズなし)として残す */
+      e.preventDefault();
+      const ph=_hoverPhase;
+      data.phases=(data.phases||[]).filter(p=>p!==ph);
+      data.tasks.forEach(t=>{if(t.phase===ph)t.phase="";});
+      _hoverPhase=null;
+      scheduleSave();render();
+      return;
+    }
+    return;
+  }
+  const mod=e.ctrlKey||e.metaKey;
+  if(!mod)return;
+  if(typing)return;
+  if(modalOpen)return;
+  const k=e.key.toLowerCase();
+  if(k==="z"&&!e.shiftKey){e.preventDefault();undo();}
+  else if((k==="z"&&e.shiftKey)||k==="y"){e.preventDefault();redo();}
+  else if(k==="d"){
+    e.preventDefault();
+    if(zoom==="fit")return;
+    if(_hoverTid){
+      const t=data.tasks.find(x=>x.id===_hoverTid);
+      if(t)duplicateTask(t);
+    }else if(_hoverPhase){
+      /* フェイズ「だけ」を複製する。配下タスクは複製しない */
+      const ph=_hoverPhase;
+      let newName=`${ph} のコピー`,i=2;
+      while(data.phases.includes(newName)){newName=`${ph} のコピー${i}`;i++;}
+      const idx=data.phases.indexOf(ph);
+      data.phases.splice(idx+1,0,newName);
+      scheduleSave();render();
+    }
+  }
+});
+setupColResizers();
+
+function updateNowStamp(){
+  const el=$("#nowStamp");
+  if(el)el.textContent=nowStamp();
+}
+updateNowStamp();
+setInterval(updateNowStamp,60000);
+$("#shortcutsBtn").onclick=()=>{
+  openModal(`
+    <h2>ショートカット一覧</h2>
+    <div class="shortcutGrid">
+      <div class="scSection">キーボード</div>
+      <div class="scRow"><span class="scKey">Ctrl+Z(⌘Z)</span><span>元に戻す</span></div>
+      <div class="scRow"><span class="scKey">Ctrl+Shift+Z ・ Ctrl+Y</span><span>やり直し</span></div>
+      <div class="scRow"><span class="scKey">Ctrl+D(⌘D)</span><span>ホバー中のタスクを複製 ／ ホバー中のフェイズだけを複製(配下タスクは複製しない)</span></div>
+      <div class="scRow"><span class="scKey">Delete ・ Backspace</span><span>ホバー中、または選択中の要素を削除</span></div>
+      <div class="scRow"><span class="scKey">Escape</span><span>ポップオーバー/モーダルを閉じる。何も開いていなければ選択解除</span></div>
+
+      <div class="scSection">共通のマウス操作(バー・◆・フェイズ名・左側の一覧に共通)</div>
+      <div class="scRow"><span class="scKey">クリック</span><span>編集モーダルを開く</span></div>
+      <div class="scRow"><span class="scKey">長押し、または動かしてドラッグ</span><span>並び替え・移動を開始(フェイズ名・左側の一覧)</span></div>
+      <div class="scRow"><span class="scKey">空所をダブルクリック</span><span>その日付に「名称未設定」で新規追加(タスク行・マイルストーンレーン)</span></div>
+      <div class="scRow"><span class="scKey">⌥(Alt)+ドラッグ</span><span>複製しながら移動</span></div>
+
+      <div class="scSection">複数選択</div>
+      <div class="scRow"><span class="scKey">Shift+クリック</span><span>タスク・マイルストーン・フェイズを複数選択(トグル)</span></div>
+      <div class="scRow"><span class="scKey">空所をドラッグ</span><span>矩形(マーキー)選択</span></div>
+      <div class="scRow"><span class="scKey">選択中の要素をドラッグ</span><span>選択した要素をまとめて移動</span></div>
+      <div class="scRow"><span class="scKey">選択中にDelete</span><span>選択した要素をまとめて削除</span></div>
+
+      <div class="scSection">タスクバー固有</div>
+      <div class="scRow"><span class="scKey">横にドラッグ</span><span>日付を移動</span></div>
+      <div class="scRow"><span class="scKey">縦にドラッグ</span><span>前後関係・所属フェイズを変更</span></div>
+      <div class="scRow"><span class="scKey">端をつまんでドラッグ</span><span>開始日・終了日を変更</span></div>
+
+      <div class="scSection">マイルストーン(◆)固有</div>
+      <div class="scRow"><span class="scKey">端をつまんでドラッグ</span><span>単発 ⇄ 期間を切り替え(伸ばすと期間に、縮めて単日にすると単発に戻る)</span></div>
+
+      <div class="scSection">フェイズ固有</div>
+      <div class="scRow"><span class="scKey">▾</span><span>配下タスクの表示/非表示を切り替え</span></div>
+      <div class="scRow"><span class="scKey">Shift+▾</span><span>全フェイズをまとめて開閉</span></div>
+      <div class="scRow"><span class="scKey">集計バー(矢印)を横にドラッグ</span><span>配下タスクをまとめて日付移動</span></div>
+      <div class="scRow"><span class="scKey">集計バー(矢印)を縦にドラッグ</span><span>フェイズ自体を並び替え</span></div>
+
+      <div class="scSection">左側のタスク一覧固有</div>
+      <div class="scRow"><span class="scKey">⠿</span><span>即座に並び替え開始(長押し不要)</span></div>
+    </div>
+    <div class="mFoot"><div class="spacer"></div><button class="btn primary" id="scClose">閉じる</button></div>
+  `,true);
+  $("#scClose").onclick=closeModal;
+};
+load().then(()=>{applyTheme();applyUiScale();applyDensity();applyTitleBar();snapshot();render();});
+</script>
+</body>
+</html>
