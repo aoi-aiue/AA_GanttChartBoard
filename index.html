@@ -174,8 +174,8 @@ header{
 .scaleStepper button{padding:5px 8px;color:#4B5157;font-weight:700;line-height:1}
 .scaleStepper button:hover{background:var(--hover)}
 .scaleStepper button:disabled{color:var(--faint);cursor:default;background:none}
-#scaleReset{border-left:1px solid var(--line);font-weight:400;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1}
-#scaleLabel{font-size:11px;color:var(--muted);min-width:34px;text-align:center;font-feature-settings:"tnum"}
+.scaleStepper .stepReset{border-left:1px solid var(--line);font-weight:400;font-size:11px;display:flex;align-items:center;justify-content:center;line-height:1}
+.scaleStepper .stepLabel{font-size:11px;color:var(--muted);min-width:34px;text-align:center;font-feature-settings:"tnum"}
 .spacer{flex:1}
 .btn{padding:6px 11px;border-radius:4px;color:#4B5157}
 .btn:hover{background:var(--line2);color:var(--text)}
@@ -186,6 +186,9 @@ body.dark .tgroup .btn:hover{background:rgba(255,255,255,.06)}
 .btn.accent{background:var(--accent);color:#fff;font-weight:600;padding:6px 14px}
 .btn.accent:hover{background:var(--accent);color:#fff;filter:brightness(1.12)}
 #saveState{font-size:11px;color:var(--faint)}
+/* 全体ビュー中だけ、目立ちすぎない程度にフッターへ注記を出す */
+#fitNotice{display:none;font-size:11px;color:#B4574A;font-weight:600}
+body.fit #fitNotice{display:block}
 #appNameSep{height:11px;margin:0}
 #appName{font-size:11px;color:var(--faint);font-weight:700}
 .seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--panel)}
@@ -200,6 +203,9 @@ body.dark .tgroup .btn:hover{background:rgba(255,255,255,.06)}
 .seg button.fitBtn{border-left:1px solid var(--line);color:#B4574A}
 .seg button.fitBtn:hover{background:rgba(180,87,74,.08)}
 .seg button.fitBtn.on{background:#B4574A;color:#fff}
+#btnFit{color:#B4574A;border-color:#B4574A;height:24px;padding:0 11px;display:flex;align-items:center;box-sizing:border-box}
+#btnFit:hover{background:rgba(180,87,74,.08)}
+#btnFit.on{background:#B4574A;color:#fff}
 .sep{width:1px;height:18px;background:var(--line);margin:0 4px}
 
 /* ---------- layout: fixed left pane + scrolling right pane ---------- */
@@ -361,7 +367,6 @@ body.fit #rpane{overflow-x:hidden}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .bcat .cdot{width:5px;height:5px;border-radius:99px;flex:none}
-.out .ocat{color:var(--faint);font-size:9.5px;margin-right:5px}
 .mband{position:absolute;top:0;height:100%}
 /* ドラッグ中: アクティブ以外を減光 */
 #gantt.dragBars .bar,#gantt.dragBars .dia,#gantt.dragBars .diaLbl,#gantt.dragBars .diaStem{opacity:.3;transition:opacity .12s}
@@ -613,7 +618,7 @@ body.fit .msband .h{cursor:default}
   max-width:calc(100% - 12px);overflow:hidden;padding:2px;z-index:2;
   will-change:transform;
 }
-.bar .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.bar .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
 .bavstack{display:flex;align-items:center;flex:none}
 .bavstack img{
   width:calc(var(--barH) - 8px);height:calc(var(--barH) - 8px);border-radius:99px;
@@ -627,11 +632,19 @@ body.fit .msband .h{cursor:default}
 .bavstack img:not(:first-child),.bavstack .cdot:not(:first-child){margin-left:-6px}
 .bar .out{
   position:absolute;left:calc(100% + 7px);top:0;height:100%;
-  display:flex;align-items:center;font-size:10px;color:var(--muted);
+  display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);
   font-weight:400;pointer-events:none;white-space:nowrap;
 }
 .bar .out.flip{left:auto;right:calc(100% + 7px)}
-.bar .out .on{color:var(--text);font-weight:600;font-size:10.5px;margin-right:5px}
+.bar .out .on{color:var(--text);font-weight:400;font-size:11px}
+/* バーが狭くて名前ごと外に出す場合、担当アイコン・カテゴリも一緒に外へ出す(バー内には収めない)。
+   大きさ・見た目はバー内にあった時(.bavstack img / .bcat)と揃える */
+.bar .out .outAv{display:inline-flex;align-items:center;flex:none}
+.bar .out .outAv img,.bar .out .outAv .cdot{
+  width:calc(var(--barH) - 8px);height:calc(var(--barH) - 8px);border-radius:99px;object-fit:cover;flex:none;display:block;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.9);
+}
+.bar .out .outAv img:not(:first-child),.bar .out .outAv .cdot:not(:first-child){margin-left:-6px}
 /* 広いバー: 普段から左端に開始日・右端に終了日を薄く表示 */
 .bar .edgeDate{
   position:absolute;top:0;height:100%;
@@ -815,12 +828,13 @@ footer{padding:6px 16px;border-top:1px solid var(--line);color:var(--faint);font
   </div>
   <div class="tgroup" title="表示に関する設定です">
     <span class="segLabel">横幅:</span>
-    <div class="seg" id="zoomSeg" title="1日あたりの表示幅(ズーム)を切り替えます">
-      <button data-z="12" title="1日を狭く表示し、広い期間を一望できます">縮小</button>
-      <button data-z="20" class="on" title="標準的な表示幅です">標準</button>
-      <button data-z="30" title="1日を広く表示し、詳細を見やすくします">拡大</button>
-      <button data-z="fit" class="fitBtn" title="1画面に全体を収めて表示します。この間はドラッグでの編集ができません">全体(編集不可)</button>
+    <div class="scaleStepper" id="dayWStepper" title="1日あたりの表示幅を変更します">
+      <button id="dayWDown" title="縮小">−</button>
+      <span id="dayWLabel" class="stepLabel">20px</span>
+      <button id="dayWUp" title="拡大">＋</button>
+      <button id="dayWReset" class="stepReset" title="標準(20px)に戻す">↺</button>
     </div>
+    <button class="btn solid" id="btnFit" title="1画面に全体を収めて表示します。この間はドラッグでの編集ができません">全体ビュー</button>
     <span class="segLabel">行の高さ:</span>
     <div class="seg" id="densSeg" title="タスク行の高さ(見やすさ)を切り替えます">
       <button data-d="s">低</button>
@@ -830,9 +844,9 @@ footer{padding:6px 16px;border-top:1px solid var(--line);color:var(--faint);font
     <span class="segLabel">表示倍率:</span>
     <div class="scaleStepper" id="scaleStepper" title="ガントチャート全体の表示倍率(メニューより下の部分)">
       <button id="scaleDown" title="縮小">−</button>
-      <span id="scaleLabel">100%</span>
+      <span id="scaleLabel" class="stepLabel">100%</span>
       <button id="scaleUp" title="拡大">＋</button>
-      <button id="scaleReset" title="等倍(100%)に戻す">↺</button>
+      <button id="scaleReset" class="stepReset" title="等倍(100%)に戻す">↺</button>
     </div>
     <label class="chk" id="todayToggle" style="font-size:11px;color:var(--muted)" title="今日の位置(TODAY)を表示します。表示中は今日より前の期間が薄く表示されます"><input type="checkbox" id="todayChk" checked><span>本日表示</span></label>
   </div>
@@ -886,6 +900,7 @@ footer{padding:6px 16px;border-top:1px solid var(--line);color:var(--faint);font
 <footer>
   <button id="shortcutsBtn" title="クリックで全ショートカット一覧を表示">バー: ドラッグ移動/クリック編集 ・ Shift+クリック: 複数選択 ・ Delete: 削除 ・ Ctrl+Z: 戻す　(クリックで詳細)</button>
   <span class="spacer"></span>
+  <span id="fitNotice">全体ビュー中は編集できません</span>
   <span id="nowStamp" title="このガントチャートを見ている(=最終更新している)日時"></span>
   <span id="saveState"></span>
   <span class="sep" id="appNameSep"></span>
@@ -906,7 +921,9 @@ function resolveMemberColor(name,fallback){
 }
 
 let data=null;
-let zoom="20";      // "12" | "20" | "30" | "fit"
+let _isFirstLoad=false; /* 保存データが何も無い状態(初回起動)かどうか。load()内で判定する */
+let zoom=20;      // 1日あたりのpx数(数値、無段階) | "fit"(画面に全体を収める特殊モード)
+const DAYW_MIN=4,DAYW_MAX=100,DAYW_STEP=2,DAYW_DEFAULT=20;
 let uiScale=1;       // ガントチャート全体の表示倍率(0.7〜1.5)。CSSのzoomと連動
 let selectedTaskIds=new Set(); // Shift+クリックで複数選択したタスクのID
 let selectedMsIds=new Set(); // ドラッグ矩形選択で複数選択したマイルストーンのID
@@ -1163,7 +1180,7 @@ async function load(){
     const v=await store.get();
     if(v){data=JSON.parse(v);}
   }catch(e){}
-  if(!data)data={projectName:"",members:[],tasks:[],milestones:[]};
+  if(!data){data={projectName:"",members:[],tasks:[],milestones:[]};_isFirstLoad=true;}
   if(!data.cats)data.cats=[];
   /* 旧形式の移行: cat文字列→catIds配列 / memberId→memberIds配列+noAsg */
   for(const t of data.tasks){
@@ -2112,14 +2129,24 @@ function addTaskRow(t,r,tW,lbody,rinner,nDays,phaseGroups,dimPast){
   const barH=(DENS[data?.ui?.density]||DENS.m).bar;
   const avMems=mems.slice(0,3);
   const hasav=avMems.length>0&&barW>=barH+16;
-  const wide=(e-s+1)*dayW>50; /* 標準ズームが46→20px/日に変わったため、しきい値もそれに合わせて下げてある */
+  /* 「バーの中に名前を収めるか、外に出すか」は日数×dayWの固定しきい値ではなく、実際の名前の文字幅を測って判定する。
+     そうしないと、しきい値は超えていても実際の名前が長くて中で見切れる(省略記号も出ず切れて見える)ケースが起きるため */
+  const nameW=tw(t.name,"11px "+FS);
+  const avSpace=hasav?(avMems.length*14+6):0;
+  const wide=barW>=Math.max(50,nameW+avSpace+28);
   const ti=dayIdx(r,fmt(today()));
   const dayChipTxt=`${days}日間`;
   const dtxt=`${dateRangeStr}(${days}日)`;
-  const catNames=cats.map(c=>c.name).join("/");
-  /* バーが短いときは名前(+カテゴリ)をバー外に表示してはみ出しでも読めるように(従来通り・フリップあり) */
-  const outHtml=(wide?"":`<b class="on">${esc(t.name)}</b>`+(cats.length?`<span class="ocat">[${esc(catNames)}]</span>`:""))+dtxt;
-  const outW=(wide?0:tw(t.name,'600 10.5px '+FS)+6+(cats.length?tw("["+catNames+"]",'9.5px '+FS)+5:0))+tw(dtxt,'10px '+FS)+12;
+  /* バーが短いときは名前(+カテゴリ)をバー外に表示してはみ出しでも読めるように(従来通り・フリップあり)。
+     担当アイコンも、バー内に収まらない(=wideでない)場合はバー内に残さず一緒に外へ出す */
+  const outAvHtml=(!wide&&avMems.length>0)?`<span class="outAv">${avMems.map(x=>x.icon?`<img src="${x.icon}" alt="">`:`<span class="cdot" style="background:${x.color}"></span>`).join("")}</span>`:"";
+  const outAvSize=barH-8; /* バー内にあった時(.bavstack img)と同じ大きさ */
+  const outAvW=outAvHtml?(outAvSize+(avMems.length-1)*(outAvSize-6)+5):0;
+  /* カテゴリも、バー内にあった時と同じ.bcatチップの見た目で表示する */
+  const outBcat=(!wide&&cats.length)?cats.map(c=>`<span class="bcat"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join(""):"";
+  const outBcatW=outBcat?cats.reduce((sum,c)=>sum+Math.min(tw(c.name,'600 9px '+FS)+19,90)+5,0):0;
+  const outHtml=outAvHtml+(wide?"":`<b class="on">${esc(t.name)}</b>`)+outBcat+dtxt;
+  const outW=outAvW+outBcatW+(wide?0:tw(t.name,'11px '+FS)+6)+tw(dtxt,'10px '+FS)+12;
   const flip=(s*dayW+barW+outW>tW)&&(s*dayW>outW);
   /* 広いバーは、ドラッグ時だけでなく普段から左端に開始日・右端に終了日を薄く常時表示する */
   const edgeDates=wide
@@ -2127,7 +2154,7 @@ function addTaskRow(t,r,tW,lbody,rinner,nDays,phaseGroups,dimPast){
     :"";
   /* カテゴリは「+N」に畳まず、複数あれば1つずつチップとして並べて表示する */
   const bcat=(wide&&cats.length)?cats.map(c=>`<span class="bcat"><span class="cdot" style="background:${c.color}"></span>${esc(c.name)}</span>`).join(""):"";
-  const avImgs=hasav?`<span class="bavstack">${avMems.map(x=>x.icon?`<img src="${x.icon}" alt="">`:`<span class="cdot" style="background:${x.color}"></span>`).join("")}</span>`:"";
+  const avImgs=(hasav&&wide)?`<span class="bavstack">${avMems.map(x=>x.icon?`<img src="${x.icon}" alt="">`:`<span class="cdot" style="background:${x.color}"></span>`).join("")}</span>`:"";
   /* アイコン・名前・カテゴリは1つのsticky塊としてまとめ、横スクロール時も一緒に左端へ追従させる */
   const blabel=`<span class="blabel">${avImgs}${wide?`<span class="lbl">${esc(t.name)}</span>`:""}${bcat}</span>`;
   bar.innerHTML=`<div class="h l"></div>${blabel}<div class="h r"></div>`+
@@ -3691,11 +3718,29 @@ $("#todayChk").addEventListener("change",()=>{
   data.ui={...(data.ui||{}),showToday:$("#todayChk").checked};
   scheduleSave();render();
 });
-document.querySelectorAll("#zoomSeg button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("#zoomSeg button").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on");zoom=b.dataset.z;render();
-  updateScaleStepperState();
-});
+/* 横幅ズーム: 無段階(2px刻み)のステッパー。「全体」ボタンだけ別枠のON/OFFトグル */
+function updateDayWStepperState(){
+  const fit=zoom==="fit";
+  $("#dayWLabel").textContent=(fit?DAYW_DEFAULT:zoom)+"px";
+  $("#dayWStepper").classList.toggle("disabled",fit);
+  $("#dayWDown").disabled=fit||zoom<=DAYW_MIN;
+  $("#dayWUp").disabled=fit||zoom>=DAYW_MAX;
+  $("#btnFit").classList.toggle("on",fit);
+}
+function setDayW(v){
+  if(zoom==="fit")return;
+  zoom=Math.min(DAYW_MAX,Math.max(DAYW_MIN,v));
+  render();updateDayWStepperState();
+}
+$("#dayWDown").onclick=()=>setDayW((zoom==="fit"?DAYW_DEFAULT:zoom)-DAYW_STEP);
+$("#dayWUp").onclick=()=>setDayW((zoom==="fit"?DAYW_DEFAULT:zoom)+DAYW_STEP);
+$("#dayWReset").onclick=()=>setDayW(DAYW_DEFAULT);
+$("#btnFit").onclick=()=>{
+  zoom=zoom==="fit"?DAYW_DEFAULT:"fit";
+  render();
+  updateDayWStepperState();updateScaleStepperState();
+};
+updateDayWStepperState();
 function updateScaleStepperState(){
   $("#scaleStepper").classList.toggle("disabled",zoom==="fit");
 }
@@ -3938,7 +3983,10 @@ $("#shortcutsBtn").onclick=()=>{
   `,true);
   $("#scClose").onclick=closeModal;
 };
-load().then(()=>{applyTheme();applyUiScale();applyDensity();applyTitleBar();snapshot();render();});
+load().then(()=>{
+  applyTheme();applyUiScale();applyDensity();applyTitleBar();snapshot();render();
+  if(_isFirstLoad)openTitleModal(true); /* 初めて開いた時は、まずタイトル設定から始められるようにする */
+});
 </script>
 </body>
 </html>
